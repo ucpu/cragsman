@@ -29,7 +29,12 @@ int main(int argc, const char *args[])
 {
 	try
 	{
-		controlThread::timePerTick = 1000000 / 30;
+		holder<loggerClass> log1 = newLogger();
+		log1->filter.bind<logFilterPolicyPass>();
+		log1->format.bind<logFormatPolicyConsole>();
+		log1->output.bind<logOutputPolicyStdOut>();
+
+		controlThread().timePerTick = 1000000 / 30;
 		engineInitialize(engineCreateConfig());
 		assets()->add(hashString("cragsman/cragsman.pack"));
 
@@ -38,7 +43,7 @@ int main(int argc, const char *args[])
 		window()->events.windowClose.attach(windowCloseListener);
 
 		window()->title("Cragsman");
-		window()->modeSetWindowed();
+		window()->modeSetWindowed(windowFlags::Border | windowFlags::Resizeable);
 
 		{
 			holder<engineProfilingClass> engineProfiling = newEngineProfiling();

@@ -1,0 +1,19 @@
+
+[]
+scheme = pack
+character.pack
+
+[]
+scheme = mesh
+export_uv = false
+export_tangent = false
+body.blend
+elbow.blend
+hand.blend?hand
+hand.blend?connector
+
+[]
+scheme = object
+body.object
+elbow.object
+hand.object

@@ -1,0 +1,14 @@
+
+[]
+scheme = pack
+clinch.pack
+
+[]
+scheme = mesh
+export_uv = false
+export_tangent = false
+clinch.blend
+
+[]
+scheme = object
+clinch.object
