@@ -14,19 +14,20 @@
 #include <cage-client/window.h>
 #include <cage-client/gui.h>
 
+uint32 cameraName;
+uint32 characterBody;
+
 namespace
 {
 	windowEventListeners windowListeners;
 	eventListener<bool()> engineInitListener;
 	eventListener<bool()> engineUpdateListener;
 
-	uint32 cameraName;
 	uint32 cursorName;
 
 	const uint32 characterHandsCount = 3;
 	uint32 characterHands[characterHandsCount];
 	uint32 characterElbows[characterHandsCount];
-	uint32 characterBody;
 	uint32 currentHand;
 
 	variableSmoothingBufferStruct<vec3> smoothBodyPosition;

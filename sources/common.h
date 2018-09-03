@@ -1,5 +1,5 @@
-#ifndef PHYSICS_H_EDSG54FD964H
-#define PHYSICS_H_EDSG54FD964H
+#ifndef cragsman_common_h_sdg456ds4hg6
+#define cragsman_common_h_sdg456ds4hg6
 
 #include <cage-core/core.h>
 #include <cage-core/math.h>
@@ -32,4 +32,7 @@ struct springComponent
 
 #define GAME_GET_COMPONENT(T,C,E) ::CAGE_JOIN(T, Component) &C = (E)->value<::CAGE_JOIN(T, Component)>(::CAGE_JOIN(T, Component)::component);
 
-#endif // !PHYSICS_H_EDSG54FD964H
+extern uint32 cameraName;
+extern uint32 characterBody;
+
+#endif

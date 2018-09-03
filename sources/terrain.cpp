@@ -35,12 +35,6 @@ void initializeMap(uint64 seed, uint32 level)
 	spatialQuery = newSpatialQuery(spatialData.get());
 }
 
-real terrainOffset(const vec2 &position)
-{
-	// todo
-	return 0;
-}
-
 entityClass *findClinch(const vec3 &pos, real maxDist)
 {
 	spatialQuery->intersection(sphere(pos, maxDist));
