@@ -26,7 +26,7 @@ void initializeMap(uint64 seed, uint32 level)
 		entityClass *e = entities()->newUniqueEntity();
 		ENGINE_GET_COMPONENT(transform, t, e);
 		vec2 pos = vec2(random() - 0.5, random() - 0.5) * 300;
-		t.position = vec3(pos, terrainOffset(pos));
+		t.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
 		ENGINE_GET_COMPONENT(render, r, e);
 		r.object = hashString("cragsman/clinch/clinch.object");
 		spatialData->update(e->getName(), sphere(t.position, 1));

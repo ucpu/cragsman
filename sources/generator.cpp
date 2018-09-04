@@ -12,6 +12,8 @@
 #include <cage-core/assets.h>
 #include <cage-core/utility/memoryBuffer.h>
 #include <cage-core/utility/png.h>
+#include <cage-core/utility/noise.h>
+#include <cage-core/utility/color.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
@@ -22,14 +24,17 @@
 
 real terrainOffset(const vec2 &position)
 {
-	// todo
-	return 0;
+	real lowf = noiseClouds(1, position * 0.008);
+	real medf = noiseCell(2, position * 0.021, 3);
+	vec2 off = vec2(noiseClouds(3, position * 0.1), noiseClouds(4, position * 0.1));
+	real highf = noiseClouds(5, position * 0.1 + off);
+	return lowf * 23 + medf * 7 + highf;
 }
 
 namespace
 {
 	const real tileLength = 20; // real world size of a tile (in 1 dimension)
-	const uint32 tileMeshResolution = 2; // number of vertices (in 1 dimension)
+	const uint32 tileMeshResolution = 30; // number of vertices (in 1 dimension)
 	const uint32 tileTextureResolution = 128; // number of texels (in 1 dimension)
 
 	eventListener<bool()> engineUpdateListener;
@@ -131,7 +136,7 @@ namespace
 		{
 			for (r.x = pt.x - 10; r.x <= pt.x + 10; r.x++)
 			{
-				if (r.distanceToPlayer() < 150)
+				if (r.distanceToPlayer() < 200)
 					neededTiles.insert(r);
 			}
 		}
@@ -148,7 +153,7 @@ namespace
 			if (t.status != tileStatusEnum::Init)
 				neededTiles.erase(t.pos);
 			// remove tiles
-			if (t.status == tileStatusEnum::Ready && t.distanceToPlayer() > 250)
+			if (t.status == tileStatusEnum::Ready && t.distanceToPlayer() > 300)
 			{
 				t.entity->destroy();
 				t.entity = nullptr;
@@ -326,20 +331,9 @@ namespace
 		CAGE_CHECK_GL_ERROR_DEBUG();
 		for (tileStruct &t : tiles)
 		{
-			if (t.status == tileStatusEnum::Upload)
+			if (t.status == tileStatusEnum::Unload1)
 			{
-				t.gpuAlbedo = dispatchTexture(t.cpuAlbedo);
-				t.gpuMaterial = dispatchTexture(t.cpuMaterial);
-				//t.gpuNormal = dispatchTexture(t.cpuNormal);
-				t.gpuMesh = dispatchMesh(t.cpuMesh);
-				t.gpuObject = dispatchObject();
-				t.status = tileStatusEnum::Fabricate;
-				break;
-			}
-			else if (t.status == tileStatusEnum::Unload1)
-			{
-				t.status == tileStatusEnum::Unload2;
-				break;
+				t.status = tileStatusEnum::Unload2;
 			}
 			else if (t.status == tileStatusEnum::Unload2)
 			{
@@ -349,6 +343,18 @@ namespace
 				//t.gpuNormal.clear();
 				t.gpuObject.clear();
 				t.status = tileStatusEnum::Init;
+			}
+		}
+		for (tileStruct &t : tiles)
+		{
+			if (t.status == tileStatusEnum::Upload)
+			{
+				t.gpuAlbedo = dispatchTexture(t.cpuAlbedo);
+				t.gpuMaterial = dispatchTexture(t.cpuMaterial);
+				//t.gpuNormal = dispatchTexture(t.cpuNormal);
+				t.gpuMesh = dispatchMesh(t.cpuMesh);
+				t.gpuObject = dispatchObject();
+				t.status = tileStatusEnum::Fabricate;
 				break;
 			}
 		}
@@ -376,6 +382,9 @@ namespace
 
 	void generateMesh(tileStruct &t)
 	{
+		static const real pwoa = tileLength / (tileMeshResolution - 1) * 0.1;
+		static const vec2 pwox = vec2(pwoa, 0);
+		static const vec2 pwoy = vec2(0, pwoa);
 		t.cpuMesh.reserve(tileMeshResolution * tileMeshResolution);
 		for (uint32 y = 0; y < tileMeshResolution; y++)
 		{
@@ -384,8 +393,12 @@ namespace
 				vertexStruct v;
 				v.uv[0] = real(x) / (tileMeshResolution - 1);
 				v.uv[1] = real(y) / (tileMeshResolution - 1);
-				v.position = vec3((v.uv - 0.5) * tileLength, 0);
-				v.normal = vec3(0, 0, 1);
+				vec2 pt = (v.uv - 0.5) * tileLength;
+				vec2 pw = vec2(t.pos.x, t.pos.y) * tileLength + pt;
+				v.position = vec3(pt, terrainOffset(pw));
+				real tox = terrainOffset(pw + pwox) - v.position[2];
+				real toy = terrainOffset(pw + pwoy) - v.position[2];
+				v.normal = vec3(-tox, -toy, 0.1).normalize();
 				t.cpuMesh.push_back(v);
 			}
 		}
@@ -397,6 +410,70 @@ namespace
 		img->empty(tileTextureResolution, tileTextureResolution, components);
 	}
 
+	void material(const vec2 &pos, vec3 &color, real &roughness, real &metallic)
+	{
+		// base color
+		{
+			vec2 off = vec2(noiseCell(41, pos * 0.063, 2), noiseCell(43, pos * 0.063, 2));
+			if (noiseClouds(42, pos * 0.097 + off * 0.2) < 0.6)
+			{ // rock 1
+				color = convertHsvToRgb(vec3(
+					noiseClouds(65, pos * 0.134, 5) * 0.01 + 0.08,
+					noiseClouds(66, pos * 0.344, 5) * 0.2 + 0.2,
+					noiseClouds(67, pos * 0.100, 5) * 0.4 + 0.55
+				));
+				roughness = 0.8;
+				metallic = 0.002;
+			}
+			else
+			{ // rock 2
+				color = convertHsvToRgb(vec3(
+					noiseClouds(55, pos * 0.321, 5) * 0.02 + 0.094,
+					noiseClouds(56, pos * 0.258, 5) * 0.3 + 0.08,
+					noiseClouds(57, pos * 0.369, 5) * 0.2 + 0.59
+				));
+				roughness = 0.6;
+				metallic = 0.049;
+			}
+		}
+
+		// small cracks
+		{
+			real f1 = noiseCell(27, pos * 0.187, 1);
+			real f2 = noiseCell(27, pos * 0.187, 2);
+			real f = f2 - f1;
+			real m = noiseClouds(28, pos * 0.43);
+			if (f < 0.01 && m < 0.5)
+			{
+				color *= 0.6;
+				roughness *= 1.2;
+			}
+		}
+
+		// white glistering spots
+		if (noiseCell(20, pos * 0.234, 1) > 0.52)
+		{
+			real c = noiseClouds(23, pos * 3, 2) * 0.7 + 0.5;
+			color = vec3(c, c, c);
+			roughness = 0.05;
+			metallic = 0.97;
+		}
+
+		// large cracks
+		{
+			vec2 off = vec2(noiseCell(24, pos * 0.1, 2), noiseCell(23, pos * 0.1, 2));
+			real f1 = noiseCell(21, pos * 0.034 + off * 0.23, 1);
+			real f2 = noiseCell(21, pos * 0.034 + off * 0.23, 2);
+			real f = f2 - f1;
+			real m = noiseClouds(25, pos * 0.023);
+			if (f < 0.015 && m < 0.4)
+			{
+				color *= 0.3;
+				roughness *= 1.5;
+			}
+		}
+	}
+
 	void generateTextures(tileStruct &t)
 	{
 		initializeTexture(t.cpuAlbedo, 3);
@@ -405,11 +482,13 @@ namespace
 		{
 			for (uint32 x = 0; x < tileTextureResolution; x++)
 			{
-				vec3 color = vec3(x, y, 0) / tileTextureResolution;
+				vec2 pw = (vec2(t.pos.x, t.pos.y) + (vec2(x, y) + 0.5) / tileTextureResolution - 0.5) * tileLength;
+				vec3 color; real roughness; real metallic;
+				material(pw, color, roughness, metallic);
 				for (uint32 i = 0; i < 3; i++)
 					t.cpuAlbedo->value(x, y, i, color[i].value);
-				t.cpuMaterial->value(x, y, 0, 0.5); // roughness
-				t.cpuMaterial->value(x, y, 1, 0.5); // metalness
+				t.cpuMaterial->value(x, y, 0, roughness.value);
+				t.cpuMaterial->value(x, y, 1, metallic.value);
 			}
 		}
 	}

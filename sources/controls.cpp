@@ -23,6 +23,7 @@ namespace
 	eventListener<bool()> engineInitListener;
 	eventListener<bool()> engineUpdateListener;
 
+	uint32 lightName;
 	uint32 cursorName;
 
 	const uint32 characterHandsCount = 3;
@@ -80,7 +81,7 @@ namespace
 		real px = p[0], py = -p[1];
 		ENGINE_GET_COMPONENT(transform, ts, entities()->getEntity(cameraName));
 		ENGINE_GET_COMPONENT(camera, cs, entities()->getEntity(cameraName));
-		mat4 view = mat4(ts.position, ts.orientation, vec3(ts.scale, ts.scale, ts.scale)).inverse();
+		mat4 view = mat4(ts.inverse());
 		mat4 proj = perspectiveProjection(cs.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
 		mat4 inv = (proj * view).inverse();
 		vec4 pn = inv * vec4(px, py, -1, 1);
@@ -97,9 +98,21 @@ namespace
 			cameraName = (cam = entities()->newUniqueEntity())->getName();
 			ENGINE_GET_COMPONENT(transform, t, cam);
 			ENGINE_GET_COMPONENT(camera, c, cam);
-			c.ambientLight = vec3(1, 1, 1);
-			c.near = 5;
-			c.far = 200;
+			c.ambientLight = vec3(1, 1, 1) * 0.25;
+			c.near = 10;
+			c.far = 150;
+		}
+
+		{ // light
+			entityClass *lig;
+			lightName = (lig = entities()->newUniqueEntity())->getName();
+			ENGINE_GET_COMPONENT(transform, t, lig);
+			ENGINE_GET_COMPONENT(light, l, lig);
+			ENGINE_GET_COMPONENT(shadowmap, s, lig);
+			l.lightType = lightTypeEnum::Directional;
+			t.orientation = quat(degs(-50), degs(60), degs());
+			s.resolution = 4096;
+			s.worldRadius = vec3(150, 150, 150);
 		}
 
 		{ // cursor
@@ -127,7 +140,8 @@ namespace
 				characterElbows[i] = (elbow = entities()->newUniqueEntity())->getName();
 				{ // hand
 					ENGINE_GET_COMPONENT(transform, t, hand);
-					vec2 pos = randomDirection2() * (random() * 5 + 5);
+					rads angle = real(i) / characterHandsCount * rads::Full;
+					vec2 pos = vec2(cos(angle), sin(angle)) * 20;
 					t.position = vec3(pos, terrainOffset(pos));
 					ENGINE_GET_COMPONENT(render, r, hand);
 					r.object = hashString("cragsman/character/hand.object");
@@ -205,16 +219,27 @@ namespace
 			if (distance(bt.position, target) > maxBodyCursorDistance)
 				target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
 			ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cursorName));
-			target[2] = terrainOffset(vec2(target));
+			target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
 			ct.position = target;
 		}
+
 		{ // camera
 			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
 			ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cameraName));
 			smoothBodyPosition.add(bt.position);
-			ct.position = smoothBodyPosition.smooth() + vec3(0, 0, 100);
+			vec3 sbp = smoothBodyPosition.smooth();
+			ct.position = sbp + vec3(0, -30, 100);
+			quat rot = quat(sbp - ct.position, vec3(0, 1, 0));
+			ct.orientation = interpolate(ct.orientation, rot, 0.1);
 		}
-		{ // hand orientations
+
+		{ // light
+			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
+			ENGINE_GET_COMPONENT(transform, lt, entities()->getEntity(lightName));
+			lt.position = bt.position;
+		}
+
+		{ // hands orientations
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
 				ENGINE_GET_COMPONENT(transform, ht, entities()->getEntity(characterHands[i]));

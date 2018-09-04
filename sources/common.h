@@ -35,4 +35,6 @@ struct springComponent
 extern uint32 cameraName;
 extern uint32 characterBody;
 
+#define CLINCH_TERRAIN_OFFSET 1.2f
+
 #endif
