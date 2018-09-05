@@ -15,5 +15,6 @@ hand.blend?connector
 []
 scheme = object
 body.object
+shoulder.object
 elbow.object
 hand.object

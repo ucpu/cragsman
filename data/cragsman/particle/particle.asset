@@ -1,0 +1,14 @@
+
+[]
+scheme = pack
+particle.pack
+
+[]
+scheme = mesh
+export_uv = false
+export_tangent = false
+particle.blend
+
+[]
+scheme = object
+particle.object

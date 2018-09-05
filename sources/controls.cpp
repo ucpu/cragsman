@@ -29,11 +29,12 @@ namespace
 	const uint32 characterHandsCount = 3;
 	uint32 characterHands[characterHandsCount];
 	uint32 characterElbows[characterHandsCount];
+	uint32 characterShoulders[characterHandsCount];
 	uint32 currentHand;
 
 	variableSmoothingBufferStruct<vec3> smoothBodyPosition;
 
-	void addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
+	entityClass *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
 	{
 		entityClass *spring = entities()->newUniqueEntity();
 		GAME_GET_COMPONENT(spring, s, spring);
@@ -43,16 +44,37 @@ namespace
 		s.stiffness = stiffness;
 		s.damping = damping;
 		std::sort(s.objects, s.objects + 1);
+		return spring;
 	}
 
-	void addSpringBodyElbow(uint32 a, uint32 b)
+	vec3 colorIndex(uint32 i)
 	{
-		addSpring(a, b, 10, 0.05, 0.1);
+		switch (i)
+		{
+		case 0: return vec3(1, 0, 0);
+		case 1: return vec3(0, 1, 0);
+		case 2: return vec3(0, 0, 1);
+		default: CAGE_THROW_CRITICAL(exception, "invalid color index");
+		}
 	}
 
-	void addSpringElbowHand(uint32 a, uint32 b)
+	void addSpringBodyShoulder(uint32 a, uint32 b, uint32 index)
 	{
-		addSpring(a, b, 10, 0.05, 0.1);
+		entityClass *e = addSpring(a, b, 3, 0.05, 0.1);
+	}
+
+	void addSpringShoulderElbow(uint32 a, uint32 b, uint32 index)
+	{
+		entityClass *e = addSpring(a, b, 7, 0.05, 0.1);
+		GAME_GET_COMPONENT(springVisual, sv, e);
+		sv.color = colorIndex(index);
+	}
+
+	void addSpringElbowHand(uint32 a, uint32 b, uint32 index)
+	{
+		entityClass *e = addSpring(a, b, 10, 0.05, 0.1);
+		GAME_GET_COMPONENT(springVisual, sv, e);
+		sv.color = colorIndex(index);
 	}
 
 	void addJoint(uint32 a, uint32 b)
@@ -135,9 +157,26 @@ namespace
 		{ // hands
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				entityClass *hand, *elbow;
-				characterHands[i] = (hand = entities()->newUniqueEntity())->getName();
+				entityClass *hand = nullptr, *elbow = nullptr, *shoulder = nullptr;
+				characterShoulders[i] = (shoulder = entities()->newUniqueEntity())->getName();
 				characterElbows[i] = (elbow = entities()->newUniqueEntity())->getName();
+				characterHands[i] = (hand = entities()->newUniqueEntity())->getName();
+				{ // shoulder
+					ENGINE_GET_COMPONENT(transform, t, shoulder);
+					ENGINE_GET_COMPONENT(render, r, shoulder);
+					r.object = hashString("cragsman/character/shoulder.object");
+					GAME_GET_COMPONENT(physics, p, shoulder);
+					p.mass = 10;
+					p.collisionRadius = 1;
+				}
+				{ // elbow
+					ENGINE_GET_COMPONENT(transform, t, elbow);
+					ENGINE_GET_COMPONENT(render, r, elbow);
+					r.object = hashString("cragsman/character/elbow.object");
+					GAME_GET_COMPONENT(physics, p, elbow);
+					p.mass = 10;
+					p.collisionRadius = 1;
+				}
 				{ // hand
 					ENGINE_GET_COMPONENT(transform, t, hand);
 					rads angle = real(i) / characterHandsCount * rads::Full;
@@ -156,16 +195,9 @@ namespace
 						addJoint(characterHands[i], c->getName());
 					}
 				}
-				{ // elbow
-					ENGINE_GET_COMPONENT(transform, t, elbow);
-					ENGINE_GET_COMPONENT(render, r, elbow);
-					r.object = hashString("cragsman/character/elbow.object");
-					GAME_GET_COMPONENT(physics, p, elbow);
-					p.mass = 10;
-					p.collisionRadius = 1;
-				}
-				addSpringBodyElbow(characterBody, characterElbows[i]);
-				addSpringElbowHand(characterElbows[i], characterHands[i]);
+				addSpringBodyShoulder(characterBody, characterShoulders[i], i);
+				addSpringShoulderElbow(characterShoulders[i], characterElbows[i], i);
+				addSpringElbowHand(characterElbows[i], characterHands[i], i);
 			}
 		}
 		currentHand = 0;
@@ -180,13 +212,13 @@ namespace
 			if (clinch)
 			{
 				removeSprings(characterHands[currentHand]);
-				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand]);
+				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand], currentHand);
 				addJoint(characterHands[currentHand], clinch->getName());
 
 				currentHand = (currentHand + 1) % characterHandsCount;
 
 				removeSprings(characterHands[currentHand]);
-				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand]);
+				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand], currentHand);
 				addJoint(characterHands[currentHand], cursorName);
 			}
 			return true;

@@ -11,6 +11,7 @@ entityClass *findClinch(const vec3 &pos, real maxDist); // find clinch closest t
 entityClass *findClinch(const line &ln); // find clinch that intersects the line
 real terrainOffset(const vec2 &position);
 vec3 terrainIntersection(const line &ln);
+entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl);
 
 struct physicsComponent
 {
@@ -28,6 +29,20 @@ struct springComponent
 	real stiffness;
 	real damping;
 	springComponent();
+};
+
+struct springVisualComponent
+{
+	static componentClass *component;
+	vec3 color;
+	springVisualComponent();
+};
+
+struct timeoutComponent
+{
+	static componentClass *component;
+	uint32 ttl;
+	timeoutComponent();
 };
 
 #define GAME_GET_COMPONENT(T,C,E) ::CAGE_JOIN(T, Component) &C = (E)->value<::CAGE_JOIN(T, Component)>(::CAGE_JOIN(T, Component)::component);
