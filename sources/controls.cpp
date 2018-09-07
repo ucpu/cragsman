@@ -231,7 +231,7 @@ namespace
 		CAGE_LOG(severityEnum::Info, "controls", "restarting the game");
 
 		entities()->getAllEntities()->destroyAllEntities();
-		initializeMap(0, 0);
+		initializeClinches();
 		initializeCharacter();
 	}
 

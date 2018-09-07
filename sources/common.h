@@ -6,12 +6,12 @@
 
 using namespace cage;
 
-void initializeMap(uint64 seed, uint32 level);
+void initializeClinches();
 entityClass *findClinch(const vec3 &pos, real maxDist); // find clinch closest to the point
 entityClass *findClinch(const line &ln); // find clinch that intersects the line
 real terrainOffset(const vec2 &position);
+void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic);
 vec3 terrainIntersection(const line &ln);
-entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl);
 
 struct physicsComponent
 {
