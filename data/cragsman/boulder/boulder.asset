@@ -1,0 +1,14 @@
+
+[]
+scheme = pack
+boulder.pack
+
+[]
+scheme = mesh
+export_uv = false
+export_tangent = false
+boulder.blend
+
+[]
+scheme = object
+boulder.object

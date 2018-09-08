@@ -5,7 +5,10 @@
 #include "common.h"
 
 #include <cage-core/log.h>
+#include <cage-core/geometry.h>
 #include <cage-core/entities.h>
+#include <cage-core/utility/collision.h>
+#include <cage-core/utility/collider.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
@@ -18,6 +21,9 @@ springComponent::springComponent() : objects{0, 0}
 
 namespace
 {
+	holder<collisionDataClass> collisionData;
+	holder<collisionQueryClass> collisionQuery;
+
 	class physicsSimulationClass
 	{
 	public:
@@ -92,6 +98,7 @@ namespace
 				addForce(e2, -f);
 			}
 		}
+
 		void gravity()
 		{
 			vec3 g = vec3(0, -9.8, 0);
@@ -102,9 +109,49 @@ namespace
 			}
 		}
 
+		vec3 collisionResponse(const transform &t, const physicsComponent &p, const triangle &tr)
+		{
+			vec3 n = tr.normal();
+			vec3 bounce = -2 * n * dot(n, p.velocity);
+
+			vec3 tp = closestPoint(tr, t.position);
+			real pen = -(distance(t.position, tp) - p.collisionRadius);
+			CAGE_ASSERT_RUNTIME(pen > 0);
+			vec3 dir = normalize(t.position - tp);
+			vec3 depen = dir * (pow(pen + 1, 3) - 1);
+
+			return (bounce * 0.9 + depen * 2) * p.mass;
+		}
+
 		void collisions()
 		{
-			// todo
+			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
+			{
+				GAME_GET_COMPONENT(physics, p, e);
+				if (!p.collisionRadius.valid())
+					continue;
+				ENGINE_GET_COMPONENT(transform, t, e);
+				collisionQuery->query(sphere(t.position, p.collisionRadius));
+				if (collisionQuery->name())
+				{
+					const colliderClass *c;
+					transform dummy;
+					collisionQuery->collider(c, dummy);
+					CAGE_ASSERT_RUNTIME(dummy == transform());
+					for (auto cp : collisionQuery->collisionPairs())
+					{
+						const triangle &tr = c->triangleData(cp.b);
+						addForce(e, collisionResponse(t, p, tr));
+					}
+				}
+				{ // ensure that the object is in front of the wall
+					// it is intended to correct objects that has fallen behind the wall before the wall was generated
+					// but it is not physical
+					real to = terrainOffset(vec2(t.position));
+					if (t.position[2] < to - p.collisionRadius)
+						t.position[2] = to + p.collisionRadius;
+				}
+			}
 		}
 
 		void applyAccelerations()
@@ -169,6 +216,35 @@ namespace
 			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
+			{
+				collisionData = newCollisionData(collisionDataCreateConfig());
+				collisionQuery = newCollisionQuery(collisionData.get());
+			}
 		}
 	} callbacksInitInstance;
+}
+
+void addTerrainCollider(uint32 name, colliderClass *c)
+{
+	collisionData->update(name, c, transform());
+	collisionData->rebuild();
+}
+
+void removeTerrainCollider(uint32 name)
+{
+	collisionData->remove(name);
+	collisionData->rebuild();
+}
+
+vec3 terrainIntersection(const line &ln)
+{
+	CAGE_ASSERT_RUNTIME(ln.normalized());
+	collisionQuery->query(ln);
+	if (!collisionQuery->name())
+		return vec3::Nan;
+	const colliderClass *c;
+	transform dummy;
+	collisionQuery->collider(c, dummy);
+	const triangle &t = c->triangleData(collisionQuery->collisionPairsData()->b);
+	return intersection(ln, t);
 }

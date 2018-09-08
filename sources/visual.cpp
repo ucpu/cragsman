@@ -34,6 +34,7 @@ entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 
 	r.object = hashString("cragsman/particle/particle.object");
 	p.mass = mass;
 	p.velocity = velocity;
+	p.collisionRadius = real::Nan;
 	to.ttl = ttl;
 	return e;
 }

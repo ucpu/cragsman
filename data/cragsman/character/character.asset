@@ -8,6 +8,7 @@ scheme = mesh
 export_uv = false
 export_tangent = false
 body.blend
+shoulder.blend
 elbow.blend
 hand.blend?hand
 hand.blend?connector

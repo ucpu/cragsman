@@ -110,7 +110,7 @@ namespace
 		vec4 pf = inv * vec4(px, py, 1, 1);
 		vec3 near = vec3(pn) / pn[3];
 		vec3 far = vec3(pf) / pf[3];
-		return terrainIntersection(line(near, far - near, 0, 1).normalize());
+		return terrainIntersection(makeSegment(near, far));
 	}
 
 	void initializeCharacter()
@@ -122,7 +122,7 @@ namespace
 			ENGINE_GET_COMPONENT(camera, c, cam);
 			c.ambientLight = vec3(1, 1, 1) * 0.25;
 			c.near = 10;
-			c.far = 150;
+			c.far = 250;
 		}
 
 		{ // light
@@ -151,7 +151,7 @@ namespace
 			r.object = hashString("cragsman/character/body.object");
 			GAME_GET_COMPONENT(physics, p, body);
 			p.mass = 50;
-			p.collisionRadius = 3;
+			p.collisionRadius = 4;
 		}
 
 		{ // hands
@@ -247,12 +247,15 @@ namespace
 		{ // cursor
 			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
 			vec3 target = screenToWorld(window()->mousePosition());
-			static const real maxBodyCursorDistance = 25;
-			if (distance(bt.position, target) > maxBodyCursorDistance)
-				target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
-			ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cursorName));
-			target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
-			ct.position = target;
+			if (target.valid())
+			{
+				static const real maxBodyCursorDistance = 25;
+				if (distance(bt.position, target) > maxBodyCursorDistance)
+					target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
+				ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cursorName));
+				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
+				ct.position = target;
+			}
 		}
 
 		{ // camera
@@ -260,7 +263,7 @@ namespace
 			ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cameraName));
 			smoothBodyPosition.add(bt.position);
 			vec3 sbp = smoothBodyPosition.smooth();
-			ct.position = sbp + vec3(0, -30, 100);
+			ct.position = sbp + vec3(0, 0, 100);
 			quat rot = quat(sbp - ct.position, vec3(0, 1, 0));
 			ct.orientation = interpolate(ct.orientation, rot, 0.1);
 		}

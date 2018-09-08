@@ -12,6 +12,8 @@ entityClass *findClinch(const line &ln); // find clinch that intersects the line
 real terrainOffset(const vec2 &position);
 void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic);
 vec3 terrainIntersection(const line &ln);
+void addTerrainCollider(uint32 name, colliderClass *c);
+void removeTerrainCollider(uint32 name);
 
 struct physicsComponent
 {

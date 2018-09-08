@@ -12,6 +12,7 @@
 #include <cage-core/assets.h>
 #include <cage-core/utility/memoryBuffer.h>
 #include <cage-core/utility/png.h>
+#include <cage-core/utility/collider.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
@@ -75,6 +76,7 @@ namespace
 
 	struct tileStruct
 	{
+		holder<colliderClass> cpuCollider;
 		std::vector<vertexStruct> cpuMesh;
 		holder<meshClass> gpuMesh;
 		holder<textureClass> gpuAlbedo;
@@ -144,6 +146,8 @@ namespace
 			// remove tiles
 			if (t.status == tileStatusEnum::Ready && t.distanceToPlayer() > 300)
 			{
+				removeTerrainCollider(t.objectName);
+				t.cpuCollider.clear();
 				t.entity->destroy();
 				t.entity = nullptr;
 				t.status = tileStatusEnum::Defabricate;
@@ -151,6 +155,7 @@ namespace
 			// create entity
 			else if (t.status == tileStatusEnum::Entity)
 			{
+				addTerrainCollider(t.objectName, t.cpuCollider.get());
 				{ // set texture names for the mesh
 					uint32 textures[MaxTexturesCountPerMaterial];
 					detail::memset(textures, 0, sizeof(textures));
@@ -393,6 +398,24 @@ namespace
 		}
 	}
 
+	void generateCollider(tileStruct &t)
+	{
+		transform m = transform(vec3(t.pos.x, t.pos.y, 0) * tileLength);
+		t.cpuCollider = newCollider();
+		const std::vector<uint32> &ids = meshIndices();
+		uint32 cnt = numeric_cast<uint32>(ids.size() / 3);
+		for (uint32 i = 0; i < cnt; i++)
+		{
+			triangle tr(
+				t.cpuMesh[ids[i * 3 + 0]].position,
+				t.cpuMesh[ids[i * 3 + 1]].position,
+				t.cpuMesh[ids[i * 3 + 2]].position
+			);
+			t.cpuCollider->addTriangle(tr * m);
+		}
+		t.cpuCollider->rebuild();
+	}
+
 	void initializeTexture(holder<pngImageClass> &img, uint32 components)
 	{
 		img = newPngImage();
@@ -429,6 +452,7 @@ namespace
 				continue;
 			}
 			generateMesh(*t);
+			generateCollider(*t);
 			generateTextures(*t);
 			t->status = tileStatusEnum::Upload;
 		}
@@ -455,13 +479,4 @@ namespace
 	} callbacksInitInstance;
 
 	holder<threadClass> generatorThread = newThread(delegate<void()>().bind<&generatorEntry>(), "generator");
-}
-
-vec3 terrainIntersection(const line &ln)
-{
-	CAGE_ASSERT_RUNTIME(ln.normalized());
-	real dst = ln.a()[2] / dot(ln.direction, vec3(0, 0, -1));
-	vec3 base = ln.a() + ln.direction * dst;
-	CAGE_ASSERT_RUNTIME(abs(base[2]) < 1e-5, base);
-	return vec3(vec2(base), terrainOffset(vec2(base)));
 }

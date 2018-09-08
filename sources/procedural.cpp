@@ -24,9 +24,9 @@ namespace
 	real slab(real v)
 	{
 		v = v % 1;
-		if (v > 0.9)
-			return sin(rads::Stright * (v - 0.9) / 0.1 + rads::Right);
-		return v / 0.9;
+		if (v > 0.8)
+			return sin(rads::Stright * (v - 0.8) / 0.2 + rads::Right);
+		return v / 0.8;
 	}
 }
 
@@ -34,6 +34,10 @@ real terrainOffset(const vec2 &pos)
 {
 	uint32 seed = globalSeed;
 	real result;
+
+	{ // slope
+		result -= pos[1] * 0.2;
+	}
 
 	{ // horizontal slabs
 		real off = noiseClouds(seed++, pos * 0.0065);
@@ -72,8 +76,7 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 
 	uint32 seed = globalSeed;
 
-	// base color
-	{
+	{ // base color
 		vec2 off = vec2(noiseCell(seed++, pos * 0.063)[1], noiseCell(seed++, pos * 0.063)[1]);
 		if (noiseClouds(seed++, pos * 0.097 + off * 0.2) < 0.73)
 		{ // rock 1
@@ -97,8 +100,7 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 		}
 	}
 
-	// cracks
-	{
+	{ // cracks
 		vec4 ff = noiseCell(seed++, pos * 0.187);
 		real f = ff[1] - ff[0];
 		real m = noiseClouds(seed++, pos * 0.43);
@@ -118,8 +120,7 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 		metallic = 0.97;
 	}
 
-	// large cracks
-	{
+	{ // large cracks
 		vec2 off = vec2(noiseCell(seed++, pos * 0.1)[1], noiseCell(seed++, pos * 0.1)[1]);
 		vec4 ff = noiseCell(seed++, pos * 0.034 + off * 0.23);
 		real f = ff[1] - ff[0];
@@ -133,7 +134,7 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 
 	{ // large grass (on up facing surfaces)
 		real thr = noiseClouds(seed++, pos * 0.015);
-		if (vn > thr)
+		if (vn > thr + 0.2)
 		{
 			real mask = noiseClouds(seed++, pos * 1.723);
 			real m = sharpEdge(mask);
