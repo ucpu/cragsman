@@ -432,7 +432,7 @@ namespace
 			{
 				vec2 pw = (vec2(t.pos.x, t.pos.y) + (vec2(x, y) + 0.5) / tileTextureResolution - 0.5) * tileLength;
 				vec3 color; real roughness; real metallic;
-				terrainMaterial(pw, color, roughness, metallic);
+				terrainMaterial(pw, color, roughness, metallic, false);
 				for (uint32 i = 0; i < 3; i++)
 					t.cpuAlbedo->value(x, y, i, color[i].value);
 				t.cpuMaterial->value(x, y, 0, roughness.value);

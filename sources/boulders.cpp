@@ -1,3 +1,4 @@
+#include <vector>
 
 #include "common.h"
 
@@ -10,52 +11,59 @@
 
 namespace
 {
-	struct boulderRotationComponent
+	struct boulderComponent
 	{
 		static componentClass *component;
 	};
 
-	componentClass *boulderRotationComponent::component;
+	componentClass *boulderComponent::component;
 
 	bool engineUpdate()
 	{
+		if (!characterBody)
+			return false;
+		ENGINE_GET_COMPONENT(transform, pt, entities()->getEntity(characterBody));
 		if (random() < 0.01)
 		{ // spawn a boulder
-			ENGINE_GET_COMPONENT(transform, pt, entities()->getEntity(characterBody));
 			entityClass *e = entities()->newAnonymousEntity();
 			ENGINE_GET_COMPONENT(transform, t, e);
 			t.scale = random() + 1.5;
-			t.position = pt.position + vec3(random() * 400 - 200, 300, 0);
+			t.position = pt.position + vec3(random() * 300 - 150, 250, 0);
 			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
 			ENGINE_GET_COMPONENT(render, r, e);
 			r.object = hashString("cragsman/boulder/boulder.object");
 			{
 				real dummy;
-				terrainMaterial(vec2(t.position), r.color, dummy, dummy);
+				terrainMaterial(vec2(t.position), r.color, dummy, dummy, true);
 			}
 			GAME_GET_COMPONENT(physics, p, e);
 			p.collisionRadius = t.scale;
-			real volume = 4 * real::Pi * pow(p.collisionRadius, 3) / 3;
-			p.mass = volume * 0.5;
-			GAME_GET_COMPONENT(timeout, to, e);
-			to.ttl = 1000;
-			GAME_GET_COMPONENT(boulderRotation, br, e);
+			p.mass = sphereVolume(p.collisionRadius) * 0.5;
+			GAME_GET_COMPONENT(boulder, br, e);
 		}
-		for (entityClass *e : boulderRotationComponent::component->getComponentEntities()->entities())
+		std::vector<entityClass*> entsToDestroy;
+		for (entityClass *e : boulderComponent::component->getComponentEntities()->entities())
 		{ // rotate boulders
 			ENGINE_GET_COMPONENT(transform, t, e);
-			GAME_GET_COMPONENT(physics, p, e);
-			real amount = p.velocity.length();
-			quat rot = quat(degs(amount), degs(), degs());
-			t.orientation = rot * t.orientation;
+			if (t.position[1] < pt.position[1] - 150)
+				entsToDestroy.push_back(e);
+			else
+			{
+				GAME_GET_COMPONENT(physics, p, e);
+				vec3 r = 1.5 * p.velocity / p.collisionRadius;
+				quat rot = quat(degs(r[2] - r[1]), degs(), degs(-r[0]));
+				t.orientation = rot * t.orientation;
+			}
 		}
+		for (auto e : entsToDestroy)
+			e->destroy();
 		return false;
 	}
 
 	bool engineInitialize()
 	{
-		boulderRotationComponent::component = entities()->defineComponent(boulderRotationComponent(), true);
+		boulderComponent::component = entities()->defineComponent(boulderComponent(), true);
 		return false;
 	}
 

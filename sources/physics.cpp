@@ -19,6 +19,11 @@ componentClass *springComponent::component;
 springComponent::springComponent() : objects{0, 0}
 {}
 
+real sphereVolume(real radius)
+{
+	return 4 * real::Pi * pow(radius, 3) / 3;
+}
+
 namespace
 {
 	holder<collisionDataClass> collisionData;
@@ -115,12 +120,13 @@ namespace
 			vec3 bounce = -2 * n * dot(n, p.velocity);
 
 			vec3 tp = closestPoint(tr, t.position);
-			real pen = -(distance(t.position, tp) - p.collisionRadius);
-			CAGE_ASSERT_RUNTIME(pen > 0);
+			real penetration = -(distance(t.position, tp) - p.collisionRadius);
+			CAGE_ASSERT_RUNTIME(penetration > 0);
+			penetration = min(penetration, 1);
 			vec3 dir = normalize(t.position - tp);
-			vec3 depen = dir * (pow(pen + 1, 3) - 1);
+			vec3 depenetration = dir * (pow(penetration + 1, 3) - 1);
 
-			return (bounce * 0.9 + depen * 2) * p.mass;
+			return (bounce * 0.9 + depenetration * 2) * p.mass;
 		}
 
 		void collisions()
@@ -148,7 +154,7 @@ namespace
 					// it is intended to correct objects that has fallen behind the wall before the wall was generated
 					// but it is not physical
 					real to = terrainOffset(vec2(t.position));
-					if (t.position[2] < to - p.collisionRadius)
+					if (t.position[2] < to - p.collisionRadius * 0.5)
 						t.position[2] = to + p.collisionRadius;
 				}
 			}
@@ -163,6 +169,7 @@ namespace
 				CAGE_ASSERT_RUNTIME(p.velocity.valid(), p.velocity);
 				ENGINE_GET_COMPONENT(transform, t, e);
 				CAGE_ASSERT_RUNTIME(t.position.valid(), t.position);
+				p.velocity *= 0.995; // damping
 				p.velocity += acceleration[e] * deltaTime;
 				t.position += p.velocity * deltaTime;
 			}
@@ -241,7 +248,13 @@ vec3 terrainIntersection(const line &ln)
 	CAGE_ASSERT_RUNTIME(ln.normalized());
 	collisionQuery->query(ln);
 	if (!collisionQuery->name())
-		return vec3::Nan;
+	{
+		// use old, less acurate method
+		real dst = ln.a()[2] / dot(ln.direction, vec3(0, 0, -1));
+		vec3 base = ln.a() + ln.direction * dst;
+		CAGE_ASSERT_RUNTIME(abs(base[2]) < 1e-5, base);
+		return vec3(vec2(base), terrainOffset(vec2(base)));
+	}
 	const colliderClass *c;
 	transform dummy;
 	collisionQuery->collider(c, dummy);

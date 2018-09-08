@@ -68,7 +68,7 @@ real terrainOffset(const vec2 &pos)
 	return result;
 }
 
-void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic)
+void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly)
 {
 	// positive -> up facing
 	// negative -> down facing
@@ -119,6 +119,9 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 		roughness = 0.05;
 		metallic = 0.97;
 	}
+
+	if (rockOnly)
+		return;
 
 	{ // large cracks
 		vec2 off = vec2(noiseCell(seed++, pos * 0.1)[1], noiseCell(seed++, pos * 0.1)[1]);

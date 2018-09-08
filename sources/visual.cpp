@@ -39,6 +39,13 @@ entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 
 	return e;
 }
 
+vec3 colorDeviation(const vec3 &color, real deviation)
+{
+	vec3 hsv = convertRgbToHsv(color) + (vec3(random(), random(), random()) - 0.5) * deviation;
+	hsv[0] = (hsv[0] + 1) % 1;
+	return convertHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
+}
+
 namespace
 {
 	vec3 entMov(entityClass *e)
@@ -49,11 +56,6 @@ namespace
 			return p.velocity / p.mass;
 		}
 		return {};
-	}
-
-	vec3 colorDeviation(const vec3 &color, real deviation)
-	{
-		return convertHsvToRgb(clamp(convertRgbToHsv(color) + (vec3(random(), random(), random()) - 0.5) * deviation, vec3(), vec3(1,1,1)));
 	}
 
 	bool engineUpdate()
@@ -82,22 +84,28 @@ namespace
 				ENGINE_GET_COMPONENT(transform, t1, e1);
 				vec3 v0 = entMov(e0);
 				vec3 v1 = entMov(e1);
-#ifdef CAGE_DEBUG
-				static const real particlesPerUnit = 0.1;
-#else
-				static const real particlesPerUnit = 2;
-#endif // CAGE_DEBUG
 
-				uint32 cnt = numeric_cast<uint32>(t0.position.distance(t1.position) * particlesPerUnit) + 3;
+#ifdef CAGE_DEBUG
+				uint32 cnt = 3;
+#else
+				uint32 cnt = numeric_cast<uint32>(t0.position.distance(t1.position) * 1.5) + 3;
+				cnt = min(cnt, 20u);
+#endif // CAGE_DEBUG
 				for (uint32 i = 1; i < cnt - 1; i++)
 				{
 					real deviation = sin(rads::Stright * real(i) / cnt);
 					real portion = (random() + i) / cnt;
-					newParticle(
+					vec3 color = colorDeviation(v.color, 0.1);
+					entityClass *pe = newParticle(
 						interpolate(t0.position, t1.position, portion) + randomDirection3() * deviation * 1.5,
 						interpolate(v0, v1, portion) + randomDirection3() * deviation * 5,
-						colorDeviation(v.color, 0.1),
-						0.05, 5);
+						color, 0.05, 5);
+					if (random() < 0.2)
+					{
+						ENGINE_GET_COMPONENT(light, pl, pe);
+						pl.color = color;
+						pl.attenuation = vec3(0, 10, 0);
+					}
 				}
 			}
 		}

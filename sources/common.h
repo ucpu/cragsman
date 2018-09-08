@@ -10,10 +10,12 @@ void initializeClinches();
 entityClass *findClinch(const vec3 &pos, real maxDist); // find clinch closest to the point
 entityClass *findClinch(const line &ln); // find clinch that intersects the line
 real terrainOffset(const vec2 &position);
-void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic);
+void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly);
 vec3 terrainIntersection(const line &ln);
 void addTerrainCollider(uint32 name, colliderClass *c);
 void removeTerrainCollider(uint32 name);
+real sphereVolume(real radius);
+vec3 colorDeviation(const vec3 &color, real deviation);
 
 struct physicsComponent
 {

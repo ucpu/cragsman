@@ -30,6 +30,7 @@ namespace
 	uint32 characterHands[characterHandsCount];
 	uint32 characterElbows[characterHandsCount];
 	uint32 characterShoulders[characterHandsCount];
+	uint32 characterHandJoints[characterHandsCount];
 	uint32 currentHand;
 
 	variableSmoothingBufferStruct<vec3> smoothBodyPosition;
@@ -51,35 +52,17 @@ namespace
 	{
 		switch (i)
 		{
-		case 0: return vec3(1, 0, 0);
-		case 1: return vec3(0, 1, 0);
-		case 2: return vec3(0, 0, 1);
+		case 0: return vec3(1, 1, 0);
+		case 1: return vec3(0, 1, 1);
+		case 2: return vec3(1, 0, 1);
 		default: CAGE_THROW_CRITICAL(exception, "invalid color index");
 		}
 	}
 
-	void addSpringBodyShoulder(uint32 a, uint32 b, uint32 index)
+	void jointHandClinch(uint32 handIndex, uint32 clinchName)
 	{
-		entityClass *e = addSpring(a, b, 3, 0.05, 0.1);
-	}
-
-	void addSpringShoulderElbow(uint32 a, uint32 b, uint32 index)
-	{
-		entityClass *e = addSpring(a, b, 7, 0.05, 0.1);
-		GAME_GET_COMPONENT(springVisual, sv, e);
-		sv.color = colorIndex(index);
-	}
-
-	void addSpringElbowHand(uint32 a, uint32 b, uint32 index)
-	{
-		entityClass *e = addSpring(a, b, 10, 0.05, 0.1);
-		GAME_GET_COMPONENT(springVisual, sv, e);
-		sv.color = colorIndex(index);
-	}
-
-	void addJoint(uint32 a, uint32 b)
-	{
-		addSpring(a, b, 0, 0.3, 0.3);
+		entityClass *e = addSpring(characterHands[handIndex], clinchName, 0, 0.3, 0.3);
+		characterHandJoints[handIndex] = e->getName();
 	}
 
 	void removeSprings(uint32 n)
@@ -134,7 +117,7 @@ namespace
 			l.lightType = lightTypeEnum::Directional;
 			t.orientation = quat(degs(-50), degs(60), degs());
 			s.resolution = 4096;
-			s.worldRadius = vec3(150, 150, 150);
+			s.worldRadius = vec3(150, 150, 200);
 		}
 
 		{ // cursor
@@ -150,8 +133,8 @@ namespace
 			ENGINE_GET_COMPONENT(render, r, body);
 			r.object = hashString("cragsman/character/body.object");
 			GAME_GET_COMPONENT(physics, p, body);
-			p.mass = 50;
-			p.collisionRadius = 4;
+			p.collisionRadius = 3;
+			p.mass = sphereVolume(p.collisionRadius);
 		}
 
 		{ // hands
@@ -166,16 +149,16 @@ namespace
 					ENGINE_GET_COMPONENT(render, r, shoulder);
 					r.object = hashString("cragsman/character/shoulder.object");
 					GAME_GET_COMPONENT(physics, p, shoulder);
-					p.mass = 10;
-					p.collisionRadius = 1;
+					p.collisionRadius = 2.3067 / 2;
+					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // elbow
 					ENGINE_GET_COMPONENT(transform, t, elbow);
 					ENGINE_GET_COMPONENT(render, r, elbow);
 					r.object = hashString("cragsman/character/elbow.object");
 					GAME_GET_COMPONENT(physics, p, elbow);
-					p.mass = 10;
-					p.collisionRadius = 1;
+					p.collisionRadius = 2.56723 / 2;
+					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // hand
 					ENGINE_GET_COMPONENT(transform, t, hand);
@@ -185,19 +168,27 @@ namespace
 					ENGINE_GET_COMPONENT(render, r, hand);
 					r.object = hashString("cragsman/character/hand.object");
 					GAME_GET_COMPONENT(physics, p, hand);
-					p.mass = 10;
-					p.collisionRadius = 1;
+					p.collisionRadius = 1.1;
+					p.mass = sphereVolume(p.collisionRadius);
 					if (i == 0)
-						addJoint(characterHands[i], cursorName);
+						jointHandClinch(i, cursorName);
 					else
 					{
 						entityClass *c = findClinch(t.position, 100);
-						addJoint(characterHands[i], c->getName());
+						jointHandClinch(i, c->getName());
 					}
 				}
-				addSpringBodyShoulder(characterBody, characterShoulders[i], i);
-				addSpringShoulderElbow(characterShoulders[i], characterElbows[i], i);
-				addSpringElbowHand(characterElbows[i], characterHands[i], i);
+				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
+				{
+					entityClass *e = addSpring(characterShoulders[i], characterElbows[i], 7, 0.05, 0.1);
+					GAME_GET_COMPONENT(springVisual, sv, e);
+					sv.color = colorDeviation(colorIndex(i), 0.1);
+				}
+				{
+					entityClass *e = addSpring(characterElbows[i], characterHands[i], 10, 0.05, 0.1);
+					GAME_GET_COMPONENT(springVisual, sv, e);
+					sv.color = colorDeviation(colorIndex(i), 0.1);
+				}
 			}
 		}
 		currentHand = 0;
@@ -211,15 +202,22 @@ namespace
 			entityClass *clinch = findClinch(ht.position, 3);
 			if (clinch)
 			{
-				removeSprings(characterHands[currentHand]);
-				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand], currentHand);
-				addJoint(characterHands[currentHand], clinch->getName());
-
+				uint32 clinchName = clinch->getName();
+				for (uint32 i = 0; i < characterHandsCount; i++)
+				{
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[i]));
+					if (s.objects[1] == clinchName)
+						return true; // do not allow multiple hands on single clinch
+				}
+				{ // attach current hand to the clinch
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					s.objects[1] = clinchName;
+				}
 				currentHand = (currentHand + 1) % characterHandsCount;
-
-				removeSprings(characterHands[currentHand]);
-				addSpringElbowHand(characterHands[currentHand], characterElbows[currentHand], currentHand);
-				addJoint(characterHands[currentHand], cursorName);
+				{ // free another hand
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					s.objects[1] = cursorName;
+				}
 			}
 			return true;
 		}
@@ -249,7 +247,7 @@ namespace
 			vec3 target = screenToWorld(window()->mousePosition());
 			if (target.valid())
 			{
-				static const real maxBodyCursorDistance = 25;
+				static const real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
 				ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cursorName));
