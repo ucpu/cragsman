@@ -41,7 +41,7 @@ entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 
 
 vec3 colorDeviation(const vec3 &color, real deviation)
 {
-	vec3 hsv = convertRgbToHsv(color) + (vec3(random(), random(), random()) - 0.5) * deviation;
+	vec3 hsv = convertRgbToHsv(color) + (vec3(cage::random(), cage::random(), cage::random()) - 0.5) * deviation;
 	hsv[0] = (hsv[0] + 1) % 1;
 	return convertHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
 }
@@ -94,13 +94,13 @@ namespace
 				for (uint32 i = 1; i < cnt - 1; i++)
 				{
 					real deviation = sin(rads::Stright * real(i) / cnt);
-					real portion = (random() + i) / cnt;
+					real portion = (cage::random() + i) / cnt;
 					vec3 color = colorDeviation(v.color, 0.1);
 					entityClass *pe = newParticle(
 						interpolate(t0.position, t1.position, portion) + randomDirection3() * deviation * 1.5,
 						interpolate(v0, v1, portion) + randomDirection3() * deviation * 5,
 						color, 0.05, 5);
-					if (random() < 0.2)
+					if (cage::random() < 0.2)
 					{
 						ENGINE_GET_COMPONENT(light, pl, pe);
 						pl.color = color;
