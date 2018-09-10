@@ -6,9 +6,8 @@
 
 using namespace cage;
 
-void initializeClinches();
-entityClass *findClinch(const vec3 &pos, real maxDist); // find clinch closest to the point
-entityClass *findClinch(const line &ln); // find clinch that intersects the line
+void findInitialClinches(uint32 &count, entityClass **result);
+entityClass *findClinch(const vec3 &pos, real maxDist);
 real terrainOffset(const vec2 &position);
 void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly);
 vec3 terrainIntersection(const line &ln);
@@ -53,6 +52,7 @@ struct timeoutComponent
 
 extern uint32 cameraName;
 extern uint32 characterBody;
+extern vec3 playerPosition;
 
 #define CLINCH_TERRAIN_OFFSET 1.2f
 

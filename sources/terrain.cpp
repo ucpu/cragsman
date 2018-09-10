@@ -4,6 +4,7 @@
 #include <atomic>
 
 #include "common.h"
+#include "baseTile.h"
 
 #include <cage-core/log.h>
 #include <cage-core/entities.h>
@@ -21,18 +22,29 @@
 #include <cage-client/assetStructs.h>
 #include <cage-client/graphics/shaderConventions.h>
 
+std::set<tilePosStruct> findNeededTiles(real tileLength, real range)
+{
+	std::set<tilePosStruct> neededTiles;
+	tilePosStruct pt;
+	pt.x = numeric_cast<sint32>(playerPosition[0] / tileLength);
+	pt.y = numeric_cast<sint32>(playerPosition[1] / tileLength);
+	tilePosStruct r;
+	for (r.y = pt.y - 10; r.y <= pt.y + 10; r.y++)
+	{
+		for (r.x = pt.x - 10; r.x <= pt.x + 10; r.x++)
+		{
+			if (r.distanceToPlayer(tileLength) < range)
+				neededTiles.insert(r);
+		}
+	}
+	return neededTiles;
+}
+
 namespace
 {
 	const real tileLength = 30; // real world size of a tile (in 1 dimension)
 	const uint32 tileMeshResolution = 40; // number of vertices (in 1 dimension)
 	const uint32 tileTextureResolution = 128; // number of texels (in 1 dimension)
-
-	eventListener<bool()> engineUpdateListener;
-	eventListener<bool()> engineAssetsListener;
-	eventListener<bool()> engineFinalizeListener;
-	eventListener<bool()> engineDispatchListener;
-	vec2 playerPosition;
-	bool stopping;
 
 	enum class tileStatusEnum
 	{
@@ -54,24 +66,6 @@ namespace
 		//vec3 tangent;
 		//vec3 bitangent;
 		vec2 uv;
-	};
-
-	struct tilePosStruct
-	{
-		sint32 x, y;
-		tilePosStruct() : x(0), y(0)
-		{}
-		bool operator < (const tilePosStruct &other) const
-		{
-			if (y == other.y)
-				return x < other.x;
-			return y < other.y;
-		}
-		real distanceToPlayer() const
-		{
-			return distance(vec2(x, y) * tileLength, playerPosition);
-		}
-		operator string () const { return string() + x + " " + y; }
 	};
 
 	struct tileStruct
@@ -98,53 +92,27 @@ namespace
 		{}
 		real distanceToPlayer() const
 		{
-			return pos.distanceToPlayer();
+			return pos.distanceToPlayer(tileLength);
 		}
 	};
 
-	std::array<tileStruct, 1024> tiles;
+	std::array<tileStruct, 256> tiles;
+	bool stopping;
 
 	/////////////////////////////////////////////////////////////////////////////
 	// CONTROL
 	/////////////////////////////////////////////////////////////////////////////
 
-	void updatePlayerPosition()
-	{
-		if (!entities()->hasEntity(characterBody))
-			return;
-		ENGINE_GET_COMPONENT(transform, t, entities()->getEntity(characterBody));
-		playerPosition = vec2(t.position);
-	}
-
-	std::set<tilePosStruct> findNeededTiles()
-	{
-		std::set<tilePosStruct> neededTiles;
-		tilePosStruct pt;
-		pt.x = numeric_cast<sint32>(playerPosition[0] / tileLength);
-		pt.y = numeric_cast<sint32>(playerPosition[1] / tileLength);
-		tilePosStruct r;
-		for (r.y = pt.y - 10; r.y <= pt.y + 10; r.y++)
-		{
-			for (r.x = pt.x - 10; r.x <= pt.x + 10; r.x++)
-			{
-				if (r.distanceToPlayer() < 200)
-					neededTiles.insert(r);
-			}
-		}
-		return neededTiles;
-	}
-
 	bool engineUpdate()
 	{
-		updatePlayerPosition();
-		std::set<tilePosStruct> neededTiles = findNeededTiles();
+		std::set<tilePosStruct> neededTiles = stopping ? std::set<tilePosStruct>() : findNeededTiles(tileLength, 200);
 		for (tileStruct &t : tiles)
 		{
 			// mark unneeded tiles
 			if (t.status != tileStatusEnum::Init)
 				neededTiles.erase(t.pos);
 			// remove tiles
-			if (t.status == tileStatusEnum::Ready && t.distanceToPlayer() > 300)
+			if (t.status == tileStatusEnum::Ready && (t.distanceToPlayer() > 300 || stopping))
 			{
 				removeTerrainCollider(t.objectName);
 				t.cpuCollider.clear();
@@ -191,6 +159,10 @@ namespace
 				t.status = tileStatusEnum::Generate;
 			}
 		}
+
+		if (!neededTiles.empty())
+			CAGE_LOG(severityEnum::Warning, "cragsman", "not enough terrain tiles");
+
 		return false;
 	}
 
@@ -206,6 +178,8 @@ namespace
 
 	bool engineAssets()
 	{
+		if (stopping)
+			engineUpdate();
 		for (tileStruct &t : tiles)
 		{
 			if (t.status == tileStatusEnum::Fabricate)
@@ -464,6 +438,10 @@ namespace
 
 	class callbacksInitClass
 	{
+		eventListener<bool()> engineUpdateListener;
+		eventListener<bool()> engineAssetsListener;
+		eventListener<bool()> engineFinalizeListener;
+		eventListener<bool()> engineDispatchListener;
 	public:
 		callbacksInitClass()
 		{

@@ -16,12 +16,11 @@
 
 uint32 cameraName;
 uint32 characterBody;
+vec3 playerPosition;
 
 namespace
 {
 	windowEventListeners windowListeners;
-	eventListener<bool()> engineInitListener;
-	eventListener<bool()> engineUpdateListener;
 
 	uint32 lightName;
 	uint32 cursorName;
@@ -96,8 +95,47 @@ namespace
 		return terrainIntersection(makeSegment(near, far));
 	}
 
-	void initializeCharacter()
+	bool mousePress(mouseButtonsFlags b, modifiersFlags m, const pointStruct &p)
 	{
+		if (b == mouseButtonsFlags::Left && m == modifiersFlags::None)
+		{
+			ENGINE_GET_COMPONENT(transform, ht, entities()->getEntity(characterHands[currentHand]));
+			entityClass *clinch = findClinch(ht.position, 3);
+			if (clinch)
+			{
+				uint32 clinchName = clinch->getName();
+				for (uint32 i = 0; i < characterHandsCount; i++)
+				{
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[i]));
+					if (s.objects[1] == clinchName)
+						return true; // do not allow multiple hands on single clinch
+				}
+				{ // attach current hand to the clinch
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					s.objects[1] = clinchName;
+				}
+				currentHand = (currentHand + 1) % characterHandsCount;
+				{ // free another hand
+					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					s.objects[1] = cursorName;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
+	bool initializeTheGame()
+	{
+		std::vector<entityClass*> clinches;
+		{
+			clinches.resize(characterHandsCount);
+			uint32 cnt = characterHandsCount;
+			findInitialClinches(cnt, clinches.data());
+			if (cnt != characterHandsCount)
+				return false;
+		}
+
 		{ // camera
 			entityClass *cam;
 			cameraName = (cam = entities()->newUniqueEntity())->getName();
@@ -173,10 +211,7 @@ namespace
 					if (i == 0)
 						jointHandClinch(i, cursorName);
 					else
-					{
-						entityClass *c = findClinch(t.position, 100);
-						jointHandClinch(i, c->getName());
-					}
+						jointHandClinch(i, clinches[i]->getName());
 				}
 				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
 				{
@@ -190,58 +225,30 @@ namespace
 					sv.color = colorDeviation(colorIndex(i), 0.1);
 				}
 			}
+			currentHand = 0;
 		}
-		currentHand = 0;
-	}
 
-	bool mousePress(mouseButtonsFlags b, modifiersFlags m, const pointStruct &p)
-	{
-		if (b == mouseButtonsFlags::Left && m == modifiersFlags::None)
-		{
-			ENGINE_GET_COMPONENT(transform, ht, entities()->getEntity(characterHands[currentHand]));
-			entityClass *clinch = findClinch(ht.position, 3);
-			if (clinch)
-			{
-				uint32 clinchName = clinch->getName();
-				for (uint32 i = 0; i < characterHandsCount; i++)
-				{
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[i]));
-					if (s.objects[1] == clinchName)
-						return true; // do not allow multiple hands on single clinch
-				}
-				{ // attach current hand to the clinch
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
-					s.objects[1] = clinchName;
-				}
-				currentHand = (currentHand + 1) % characterHandsCount;
-				{ // free another hand
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
-					s.objects[1] = cursorName;
-				}
-			}
-			return true;
-		}
-		return false;
-	}
-
-	void restartGame()
-	{
-		CAGE_LOG(severityEnum::Info, "controls", "restarting the game");
-
-		entities()->getAllEntities()->destroyAllEntities();
-		initializeClinches();
-		initializeCharacter();
-	}
-
-	bool engineInitialize()
-	{
-		windowListeners.attachAll(window());
-		windowListeners.mousePress.bind<&mousePress>();
-		return false;
+		return true;
 	}
 
 	bool engineUpdate()
 	{
+		if (!characterBody)
+		{
+			if (!initializeTheGame())
+				return false;
+		}
+
+		{ // player position
+			if (characterBody && entities()->hasEntity(characterBody))
+			{
+				ENGINE_GET_COMPONENT(transform, t, entities()->getEntity(characterBody));
+				playerPosition = t.position;
+			}
+			else
+				playerPosition = vec3::Nan;
+		}
+
 		{ // cursor
 			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
 			vec3 target = screenToWorld(window()->mousePosition());
@@ -280,23 +287,26 @@ namespace
 				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
 			}
 		}
+
 		return false;
 	}
 
-	bool firstUpdate()
+	bool engineInitialize()
 	{
-		restartGame();
-		engineUpdateListener.bind<&engineUpdate>();
-		return engineUpdate();
+		windowListeners.attachAll(window());
+		windowListeners.mousePress.bind<&mousePress>();
+		return false;
 	}
 
 	class callbacksInitClass
 	{
+		eventListener<bool()> engineInitListener;
+		eventListener<bool()> engineUpdateListener;
 	public:
 		callbacksInitClass()
 		{
 			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&firstUpdate>();
+			engineUpdateListener.bind<&engineUpdate>();
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 		}

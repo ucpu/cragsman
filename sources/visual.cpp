@@ -122,10 +122,9 @@ namespace
 
 	class callbacksInitClass
 	{
-	public:
 		eventListener<bool()> engineInitListener;
 		eventListener<bool()> engineUpdateListener;
-
+	public:
 		callbacksInitClass()
 		{
 			engineInitListener.attach(controlThread().initialize);
