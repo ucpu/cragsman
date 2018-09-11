@@ -25,7 +25,7 @@ namespace cage
 
 namespace
 {
-	const real tileLength = 100; // real world size of a tile (in 1 dimension)
+	const real tileLength = 70; // real world size of a tile (in 1 dimension)
 
 	holder<spatialDataClass> spatialData;
 	holder<spatialQueryClass> spatialQuery;
@@ -45,21 +45,17 @@ namespace
 	void generateClinches(tileStruct &t)
 	{
 		CAGE_ASSERT_RUNTIME(t.clinches.empty());
-		uint32 cnt = numeric_cast<uint32>(pow(real::E, max(t.pos.y - 2, 0) * -0.01) * 10) + 1;
-		uint32 res = numeric_cast<uint32>(sqrt(cnt));
 		randomGenerator rg(detail::hash(t.pos.x), detail::hash(t.pos.y));
-		for (uint32 y = 0; y < res; y++)
+		uint32 cnt = numeric_cast<uint32>(pow(real::E, max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
+		for (uint32 i = 0; i < cnt; i++)
 		{
-			for (uint32 x = 0; x < res; x++)
-			{
-				entityClass *e = entities()->newUniqueEntity();
-				t.clinches.push_back(e);
-				ENGINE_GET_COMPONENT(transform, tr, e);
-				vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.random() + x, rg.random() + y) / res - 0.5) * tileLength;
-				tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
-				ENGINE_GET_COMPONENT(render, r, e);
-				r.object = hashString("cragsman/clinch/clinch.object");
-			}
+			entityClass *e = entities()->newUniqueEntity();
+			t.clinches.push_back(e);
+			ENGINE_GET_COMPONENT(transform, tr, e);
+			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.random(), rg.random()) - 0.5) * tileLength;
+			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
+			ENGINE_GET_COMPONENT(render, r, e);
+			r.object = hashString("cragsman/clinch/clinch.object");
 		}
 	}
 

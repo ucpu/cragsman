@@ -45,11 +45,13 @@ namespace
 	const real tileLength = 30; // real world size of a tile (in 1 dimension)
 	const uint32 tileMeshResolution = 40; // number of vertices (in 1 dimension)
 	const uint32 tileTextureResolution = 128; // number of texels (in 1 dimension)
+	const real distanceToUnloadTile = 300;
 
 	enum class tileStatusEnum
 	{
 		Init,
 		Generate,
+		Generating,
 		Upload,
 		Fabricate,
 		Entity,
@@ -112,7 +114,7 @@ namespace
 			if (t.status != tileStatusEnum::Init)
 				neededTiles.erase(t.pos);
 			// remove tiles
-			if (t.status == tileStatusEnum::Ready && (t.distanceToPlayer() > 300 || stopping))
+			if (t.status == tileStatusEnum::Ready && (t.distanceToPlayer() > distanceToUnloadTile || stopping))
 			{
 				removeTerrainCollider(t.objectName);
 				t.cpuCollider.clear();
@@ -161,7 +163,10 @@ namespace
 		}
 
 		if (!neededTiles.empty())
-			CAGE_LOG(severityEnum::Warning, "cragsman", "not enough terrain tiles");
+		{
+			CAGE_LOG(severityEnum::Warning, "cragsman", "not enough terrain tile slots");
+			detail::debugBreakpoint();
+		}
 
 		return false;
 	}
@@ -336,15 +341,25 @@ namespace
 
 	tileStruct *generatorChooseTile()
 	{
+		static holder<mutexClass> mut = newMutex();
+		scopeLock<mutexClass> lock(mut);
 		tileStruct *result = nullptr;
 		for (tileStruct &t : tiles)
 		{
 			if (t.status != tileStatusEnum::Generate)
 				continue;
+			real d = t.distanceToPlayer();
+			if (d > distanceToUnloadTile)
+			{
+				t.status = tileStatusEnum::Init;
+				continue;
+			}
 			if (result && t.distanceToPlayer() > result->distanceToPlayer())
 				continue;
 			result = &t;
 		}
+		if (result)
+			result->status = tileStatusEnum::Generating;
 		return result;
 	}
 
@@ -436,6 +451,8 @@ namespace
 	// INITIALIZE
 	/////////////////////////////////////////////////////////////////////////////
 
+	std::vector<holder<threadClass>> generatorThreads;
+
 	class callbacksInitClass
 	{
 		eventListener<bool()> engineUpdateListener;
@@ -453,8 +470,10 @@ namespace
 			engineFinalizeListener.bind<&engineFinalize>();
 			engineDispatchListener.attach(graphicsDispatchThread().render);
 			engineDispatchListener.bind<&engineDispatch>();
+			
+			uint32 cpuCount = max(processorsCount(), 2u) - 1;
+			for (uint32 i = 0; i < cpuCount; i++)
+				generatorThreads.push_back(newThread(delegate<void()>().bind<&generatorEntry>(), string() + "generator " + i));
 		}
 	} callbacksInitInstance;
-
-	holder<threadClass> generatorThread = newThread(delegate<void()>().bind<&generatorEntry>(), "generator");
 }
