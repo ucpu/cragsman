@@ -15,6 +15,7 @@ void addTerrainCollider(uint32 name, colliderClass *c);
 void removeTerrainCollider(uint32 name);
 real sphereVolume(real radius);
 vec3 colorDeviation(const vec3 &color, real deviation);
+quat sunLightOrientation(const vec2 &playerPosition);
 
 struct physicsComponent
 {

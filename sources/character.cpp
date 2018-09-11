@@ -153,7 +153,6 @@ namespace
 			ENGINE_GET_COMPONENT(light, l, lig);
 			ENGINE_GET_COMPONENT(shadowmap, s, lig);
 			l.lightType = lightTypeEnum::Directional;
-			t.orientation = quat(degs(-50), degs(60), degs());
 			s.resolution = 4096;
 			s.worldRadius = vec3(150, 150, 200);
 		}
@@ -277,6 +276,7 @@ namespace
 			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
 			ENGINE_GET_COMPONENT(transform, lt, entities()->getEntity(lightName));
 			lt.position = bt.position;
+			lt.orientation = sunLightOrientation(vec2(playerPosition));
 		}
 
 		{ // hands orientations
