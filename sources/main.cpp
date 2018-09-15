@@ -47,7 +47,7 @@ int main(int argc, const char *args[])
 
 		{
 			holder<engineProfilingClass> engineProfiling = newEngineProfiling();
-			engineProfiling->profilingMode = profilingModeEnum::None;
+			engineProfiling->profilingScope = engineProfilingScopeEnum::None;
 			engineProfiling->keyToggleFullscreen = 0;
 			engineProfiling->screenPosition = vec2(0.5, 0.5);
 
