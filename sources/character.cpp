@@ -6,8 +6,8 @@
 #include <cage-core/log.h>
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
-#include <cage-core/utility/hashString.h>
-#include <cage-core/utility/variableSmoothingBuffer.h>
+#include <cage-core/hashString.h>
+#include <cage-core/variableSmoothingBuffer.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>

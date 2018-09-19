@@ -3,9 +3,9 @@
 
 #include <cage-core/log.h>
 #include <cage-core/geometry.h>
-#include <cage-core/utility/noise.h>
-#include <cage-core/utility/color.h>
-#include <cage-core/utility/random.h>
+#include <cage-core/noise.h>
+#include <cage-core/color.h>
+#include <cage-core/random.h>
 
 namespace
 {

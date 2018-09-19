@@ -8,9 +8,9 @@
 #include <cage-core/log.h>
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
-#include <cage-core/utility/spatial.h>
-#include <cage-core/utility/hashString.h>
-#include <cage-core/utility/random.h>
+#include <cage-core/spatial.h>
+#include <cage-core/hashString.h>
+#include <cage-core/random.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>

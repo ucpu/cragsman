@@ -6,8 +6,8 @@
 
 #include <cage-core/log.h>
 #include <cage-core/entities.h>
-#include <cage-core/utility/hashString.h>
-#include <cage-core/utility/color.h>
+#include <cage-core/hashString.h>
+#include <cage-core/color.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>

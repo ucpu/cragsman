@@ -5,14 +5,14 @@
 #include <cage-core/math.h>
 #include <cage-core/config.h>
 #include <cage-core/assets.h>
-#include <cage-core/utility/ini.h>
-#include <cage-core/utility/hashString.h>
+#include <cage-core/ini.h>
+#include <cage-core/hashString.h>
 
 #include <cage-client/core.h>
 #include <cage-client/window.h>
 #include <cage-client/engine.h>
-#include <cage-client/utility/engineProfiling.h>
-#include <cage-client/utility/highPerformanceGpuHint.h>
+#include <cage-client/engineProfiling.h>
+#include <cage-client/highPerformanceGpuHint.h>
 
 using namespace cage;
 

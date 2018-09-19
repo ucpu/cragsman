@@ -11,9 +11,9 @@
 #include <cage-core/geometry.h>
 #include <cage-core/concurrent.h>
 #include <cage-core/assets.h>
-#include <cage-core/utility/memoryBuffer.h>
-#include <cage-core/utility/png.h>
-#include <cage-core/utility/collider.h>
+#include <cage-core/memoryBuffer.h>
+#include <cage-core/png.h>
+#include <cage-core/collider.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
