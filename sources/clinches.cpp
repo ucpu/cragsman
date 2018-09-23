@@ -52,7 +52,7 @@ namespace
 			entityClass *e = entities()->newUniqueEntity();
 			t.clinches.push_back(e);
 			ENGINE_GET_COMPONENT(transform, tr, e);
-			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.random(), rg.random()) - 0.5) * tileLength;
+			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
 			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
 			ENGINE_GET_COMPONENT(render, r, e);
 			r.object = hashString("cragsman/clinch/clinch.object");

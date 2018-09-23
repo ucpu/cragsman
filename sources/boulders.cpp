@@ -23,12 +23,12 @@ namespace
 		if (!characterBody)
 			return false;
 		ENGINE_GET_COMPONENT(transform, pt, entities()->getEntity(characterBody));
-		if (cage::random() < 0.01)
+		if (randomChance() < 0.01)
 		{ // spawn a boulder
 			entityClass *e = entities()->newAnonymousEntity();
 			ENGINE_GET_COMPONENT(transform, t, e);
-			t.scale = cage::random() + 1.5;
-			t.position = pt.position + vec3(cage::random() * 300 - 150, 250, 0);
+			t.scale = randomChance() + 1.5;
+			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
 			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
 			ENGINE_GET_COMPONENT(render, r, e);
