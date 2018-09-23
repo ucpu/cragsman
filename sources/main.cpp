@@ -1,11 +1,12 @@
 #include <exception>
 
-#include <cage-core/core.h>
+#include "common.h"
+
 #include <cage-core/log.h>
-#include <cage-core/math.h>
 #include <cage-core/config.h>
 #include <cage-core/assets.h>
 #include <cage-core/ini.h>
+#include <cage-core/entities.h>
 #include <cage-core/hashString.h>
 
 #include <cage-client/core.h>
@@ -13,8 +14,6 @@
 #include <cage-client/engine.h>
 #include <cage-client/engineProfiling.h>
 #include <cage-client/highPerformanceGpuHint.h>
-
-using namespace cage;
 
 namespace
 {
@@ -44,6 +43,9 @@ int main(int argc, const char *args[])
 
 		window()->title("Cragsman");
 		window()->modeSetWindowed(windowFlags::Border | windowFlags::Resizeable);
+
+		physicsComponent::component = entities()->defineComponent(physicsComponent(), true);
+		springComponent::component = entities()->defineComponent(springComponent(), true);
 
 		{
 			holder<engineProfilingClass> engineProfiling = newEngineProfiling();

@@ -129,7 +129,7 @@ namespace
 			return (bounce * 0.9 + depenetration * 2) * p.mass;
 		}
 
-		void collisions()
+		void collisionsWithTerrain()
 		{
 			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
 			{
@@ -156,6 +156,52 @@ namespace
 					real to = terrainOffset(vec2(t.position));
 					if (t.position[2] < to - p.collisionRadius * 0.5)
 						t.position[2] = to + p.collisionRadius;
+				}
+			}
+		}
+
+		void collisionsWithEntities()
+		{
+			std::vector<entityClass*> ents;
+			ents.reserve(physicsComponent::component->getComponentEntities()->entitiesCount());
+			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
+			{
+				GAME_GET_COMPONENT(physics, p, e);
+				if (p.collisionRadius.valid())
+					ents.push_back(e);
+			}
+			uint32 cnt = numeric_cast<uint32>(ents.size());
+			for (uint32 a = 0; a < cnt; a++)
+			{
+				for (uint32 b = a + 1; b < cnt; b++)
+				{
+					entityClass *ae = ents[a];
+					entityClass *be = ents[b];
+					GAME_GET_COMPONENT(physics, ap, ae);
+					GAME_GET_COMPONENT(physics, bp, be);
+					GAME_GET_COMPONENT(transform, at, ae);
+					GAME_GET_COMPONENT(transform, bt, be);
+					real dist = at.position.squaredDistance(bt.position);
+					if (dist > sqr(ap.collisionRadius + bp.collisionRadius) || dist < 1e-7)
+						continue;
+					vec3 n = normalize(at.position - bt.position);
+					{ // bounce
+						real av = dot(ap.velocity, n);
+						real bv = dot(bp.velocity, n);
+						real p = 2 * (av - bv) / (ap.mass + bp.mass);
+						addForce(ae, -p * bp.mass * ap.mass * n);
+						addForce(be, +p * ap.mass * bp.mass * n);
+					}
+					/*
+					{ // depenetrate
+						real penetration = at.position.distance(bt.position) - (ap.collisionRadius + bp.collisionRadius);
+						CAGE_ASSERT_RUNTIME(penetration > 0);
+						penetration = min(penetration * 0.5, 1);
+						vec3 depenetration = n * (pow(penetration + 1, 3) - 1);
+						addForce(ae, -ap.mass * 2 * depenetration);
+						addForce(be, +bp.mass * 2 * depenetration);
+					}
+					*/
 				}
 			}
 		}
@@ -190,7 +236,8 @@ namespace
 			{
 				springs();
 				gravity();
-				collisions();
+				collisionsWithTerrain();
+				collisionsWithEntities();
 				applyAccelerations();
 				destroyEntities();
 			}
@@ -204,22 +251,12 @@ namespace
 		return false;
 	}
 
-	bool engineInitialize()
-	{
-		physicsComponent::component = entities()->defineComponent(physicsComponent(), true);
-		springComponent::component = entities()->defineComponent(springComponent(), true);
-		return false;
-	}
-
 	class callbacksInitClass
 	{
-		eventListener<bool()> engineInitListener;
 		eventListener<bool()> engineUpdateListener;
 	public:
 		callbacksInitClass()
 		{
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 			{

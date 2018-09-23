@@ -183,18 +183,22 @@ namespace
 				characterHands[i] = (hand = entities()->newUniqueEntity())->getName();
 				{ // shoulder
 					ENGINE_GET_COMPONENT(transform, t, shoulder);
+					t.scale = 2.3067 / 2;
 					ENGINE_GET_COMPONENT(render, r, shoulder);
-					r.object = hashString("cragsman/character/shoulder.object");
+					r.object = hashString("cragsman/character/sphere.object");
+					r.color = colorDeviation(colorIndex(i), 0.2);
 					GAME_GET_COMPONENT(physics, p, shoulder);
-					p.collisionRadius = 2.3067 / 2;
+					p.collisionRadius = t.scale;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // elbow
 					ENGINE_GET_COMPONENT(transform, t, elbow);
+					t.scale = 2.56723 / 2;
 					ENGINE_GET_COMPONENT(render, r, elbow);
-					r.object = hashString("cragsman/character/elbow.object");
+					r.object = hashString("cragsman/character/sphere.object");
+					r.color = colorDeviation(colorIndex(i), 0.2);
 					GAME_GET_COMPONENT(physics, p, elbow);
-					p.collisionRadius = 2.56723 / 2;
+					p.collisionRadius = t.scale;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // hand
