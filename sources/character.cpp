@@ -36,7 +36,7 @@ namespace
 
 	entityClass *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
 	{
-		entityClass *spring = entities()->newUniqueEntity();
+		entityClass *spring = entities()->createUnique();
 		GAME_GET_COMPONENT(spring, s, spring);
 		s.objects[0] = a;
 		s.objects[1] = b;
@@ -61,12 +61,12 @@ namespace
 	void jointHandClinch(uint32 handIndex, uint32 clinchName)
 	{
 		entityClass *e = addSpring(characterHands[handIndex], clinchName, 0, 0.3, 0.3);
-		characterHandJoints[handIndex] = e->getName();
+		characterHandJoints[handIndex] = e->name();
 	}
 
 	void removeSprings(uint32 n)
 	{
-		auto sns = springComponent::component->getComponentEntities()->entities();
+		auto sns = springComponent::component->entities();
 		std::vector<entityClass *> ses(sns.begin(), sns.end());
 		for (entityClass *e : ses)
 		{
@@ -83,8 +83,8 @@ namespace
 		p /= vec2(res.x, res.y);
 		p = p * 2 - 1;
 		real px = p[0], py = -p[1];
-		ENGINE_GET_COMPONENT(transform, ts, entities()->getEntity(cameraName));
-		ENGINE_GET_COMPONENT(camera, cs, entities()->getEntity(cameraName));
+		ENGINE_GET_COMPONENT(transform, ts, entities()->get(cameraName));
+		ENGINE_GET_COMPONENT(camera, cs, entities()->get(cameraName));
 		mat4 view = mat4(ts.inverse());
 		mat4 proj = perspectiveProjection(cs.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
 		mat4 inv = (proj * view).inverse();
@@ -99,24 +99,24 @@ namespace
 	{
 		if (b == mouseButtonsFlags::Left && m == modifiersFlags::None)
 		{
-			ENGINE_GET_COMPONENT(transform, ht, entities()->getEntity(characterHands[currentHand]));
+			ENGINE_GET_COMPONENT(transform, ht, entities()->get(characterHands[currentHand]));
 			entityClass *clinch = findClinch(ht.position, 3);
 			if (clinch)
 			{
-				uint32 clinchName = clinch->getName();
+				uint32 clinchName = clinch->name();
 				for (uint32 i = 0; i < characterHandsCount; i++)
 				{
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[i]));
+					GAME_GET_COMPONENT(spring, s, entities()->get(characterHandJoints[i]));
 					if (s.objects[1] == clinchName)
 						return true; // do not allow multiple hands on single clinch
 				}
 				{ // attach current hand to the clinch
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					GAME_GET_COMPONENT(spring, s, entities()->get(characterHandJoints[currentHand]));
 					s.objects[1] = clinchName;
 				}
 				currentHand = (currentHand + 1) % characterHandsCount;
 				{ // free another hand
-					GAME_GET_COMPONENT(spring, s, entities()->getEntity(characterHandJoints[currentHand]));
+					GAME_GET_COMPONENT(spring, s, entities()->get(characterHandJoints[currentHand]));
 					s.objects[1] = cursorName;
 				}
 			}
@@ -138,7 +138,7 @@ namespace
 
 		{ // camera
 			entityClass *cam;
-			cameraName = (cam = entities()->newUniqueEntity())->getName();
+			cameraName = (cam = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, cam);
 			ENGINE_GET_COMPONENT(camera, c, cam);
 			c.ambientLight = vec3(1, 1, 1) * 0.25;
@@ -148,7 +148,7 @@ namespace
 
 		{ // light
 			entityClass *lig;
-			lightName = (lig = entities()->newUniqueEntity())->getName();
+			lightName = (lig = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, lig);
 			ENGINE_GET_COMPONENT(light, l, lig);
 			ENGINE_GET_COMPONENT(shadowmap, s, lig);
@@ -159,13 +159,13 @@ namespace
 
 		{ // cursor
 			entityClass *cur;
-			cursorName = (cur = entities()->newUniqueEntity())->getName();
+			cursorName = (cur = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, cur);
 		}
 
 		{ // body
 			entityClass *body;
-			characterBody = (body = entities()->newUniqueEntity())->getName();
+			characterBody = (body = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, body);
 			ENGINE_GET_COMPONENT(render, r, body);
 			r.object = hashString("cragsman/character/body.object");
@@ -178,9 +178,9 @@ namespace
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
 				entityClass *hand = nullptr, *elbow = nullptr, *shoulder = nullptr;
-				characterShoulders[i] = (shoulder = entities()->newUniqueEntity())->getName();
-				characterElbows[i] = (elbow = entities()->newUniqueEntity())->getName();
-				characterHands[i] = (hand = entities()->newUniqueEntity())->getName();
+				characterShoulders[i] = (shoulder = entities()->createUnique())->name();
+				characterElbows[i] = (elbow = entities()->createUnique())->name();
+				characterHands[i] = (hand = entities()->createUnique())->name();
 				{ // shoulder
 					ENGINE_GET_COMPONENT(transform, t, shoulder);
 					ENGINE_GET_COMPONENT(render, r, shoulder);
@@ -210,7 +210,7 @@ namespace
 					if (i == 0)
 						jointHandClinch(i, cursorName);
 					else
-						jointHandClinch(i, clinches[i]->getName());
+						jointHandClinch(i, clinches[i]->name());
 				}
 				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
 				{
@@ -239,9 +239,9 @@ namespace
 		}
 
 		{ // player position
-			if (characterBody && entities()->hasEntity(characterBody))
+			if (characterBody && entities()->has(characterBody))
 			{
-				ENGINE_GET_COMPONENT(transform, t, entities()->getEntity(characterBody));
+				ENGINE_GET_COMPONENT(transform, t, entities()->get(characterBody));
 				playerPosition = t.position;
 			}
 			else
@@ -249,22 +249,22 @@ namespace
 		}
 
 		{ // cursor
-			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
+			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
 			vec3 target = screenToWorld(window()->mousePosition());
 			if (target.valid())
 			{
 				static const real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
-				ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cursorName));
+				ENGINE_GET_COMPONENT(transform, ct, entities()->get(cursorName));
 				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
 				ct.position = target;
 			}
 		}
 
 		{ // camera
-			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
-			ENGINE_GET_COMPONENT(transform, ct, entities()->getEntity(cameraName));
+			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
+			ENGINE_GET_COMPONENT(transform, ct, entities()->get(cameraName));
 			smoothBodyPosition.add(bt.position);
 			vec3 sbp = smoothBodyPosition.smooth();
 			ct.position = sbp + vec3(0, 0, 100);
@@ -273,8 +273,8 @@ namespace
 		}
 
 		{ // light
-			ENGINE_GET_COMPONENT(transform, bt, entities()->getEntity(characterBody));
-			ENGINE_GET_COMPONENT(transform, lt, entities()->getEntity(lightName));
+			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
+			ENGINE_GET_COMPONENT(transform, lt, entities()->get(lightName));
 			lt.position = bt.position;
 			lt.orientation = sunLightOrientation(vec2(playerPosition));
 		}
@@ -282,8 +282,8 @@ namespace
 		{ // hands orientations
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				ENGINE_GET_COMPONENT(transform, ht, entities()->getEntity(characterHands[i]));
-				ENGINE_GET_COMPONENT(transform, et, entities()->getEntity(characterElbows[i]));
+				ENGINE_GET_COMPONENT(transform, ht, entities()->get(characterHands[i]));
+				ENGINE_GET_COMPONENT(transform, et, entities()->get(characterElbows[i]));
 				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
 			}
 		}

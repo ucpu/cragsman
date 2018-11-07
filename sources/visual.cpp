@@ -23,7 +23,7 @@ timeoutComponent::timeoutComponent() : ttl(0)
 
 entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
 {
-	entityClass *e = entities()->newAnonymousEntity();
+	entityClass *e = entities()->createAnonymous();
 	ENGINE_GET_COMPONENT(transform, t, e);
 	ENGINE_GET_COMPONENT(render, r, e);
 	GAME_GET_COMPONENT(physics, p, e);
@@ -50,7 +50,7 @@ namespace
 {
 	vec3 entMov(entityClass *e)
 	{
-		if (e->hasComponent(physicsComponent::component))
+		if (e->has(physicsComponent::component))
 		{
 			GAME_GET_COMPONENT(physics, p, e);
 			return p.velocity / p.mass;
@@ -62,7 +62,7 @@ namespace
 	{
 		{ // timeout entities
 			std::vector<entityClass *> etd;
-			for (entityClass *e : timeoutComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : timeoutComponent::component->entities())
 			{
 				GAME_GET_COMPONENT(timeout, t, e);
 				if (t.ttl-- == 0)
@@ -73,13 +73,13 @@ namespace
 		}
 
 		{ // spring visuals
-			for (entityClass *e : springVisualComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : springVisualComponent::component->entities())
 			{
-				CAGE_ASSERT_RUNTIME(e->hasComponent(springComponent::component));
+				CAGE_ASSERT_RUNTIME(e->has(springComponent::component));
 				GAME_GET_COMPONENT(spring, s, e);
 				GAME_GET_COMPONENT(springVisual, v, e);
-				entityClass *e0 = entities()->getEntity(s.objects[0]);
-				entityClass *e1 = entities()->getEntity(s.objects[1]);
+				entityClass *e0 = entities()->get(s.objects[0]);
+				entityClass *e1 = entities()->get(s.objects[1]);
 				ENGINE_GET_COMPONENT(transform, t0, e0);
 				ENGINE_GET_COMPONENT(transform, t1, e1);
 				vec3 v0 = entMov(e0);

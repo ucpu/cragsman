@@ -22,10 +22,10 @@ namespace
 	{
 		if (!characterBody)
 			return false;
-		ENGINE_GET_COMPONENT(transform, pt, entities()->getEntity(characterBody));
+		ENGINE_GET_COMPONENT(transform, pt, entities()->get(characterBody));
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
-			entityClass *e = entities()->newAnonymousEntity();
+			entityClass *e = entities()->createAnonymous();
 			ENGINE_GET_COMPONENT(transform, t, e);
 			t.scale = randomChance() + 1.5;
 			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
@@ -43,7 +43,7 @@ namespace
 			GAME_GET_COMPONENT(boulder, br, e);
 		}
 		std::vector<entityClass*> entsToDestroy;
-		for (entityClass *e : boulderComponent::component->getComponentEntities()->entities())
+		for (entityClass *e : boulderComponent::component->entities())
 		{ // rotate boulders
 			ENGINE_GET_COMPONENT(transform, t, e);
 			if (t.position[1] < pt.position[1] - 150)

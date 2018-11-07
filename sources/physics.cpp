@@ -49,7 +49,7 @@ namespace
 
 		static real entMass(entityClass *e)
 		{
-			if (e->hasComponent(physicsComponent::component))
+			if (e->has(physicsComponent::component))
 			{
 				GAME_GET_COMPONENT(physics, p, e);
 				CAGE_ASSERT_RUNTIME(p.mass > 1e-7, p.mass);
@@ -60,7 +60,7 @@ namespace
 
 		static vec3 entVel(entityClass *e)
 		{
-			if (e->hasComponent(physicsComponent::component))
+			if (e->has(physicsComponent::component))
 			{
 				GAME_GET_COMPONENT(physics, p, e);
 				return p.velocity;
@@ -77,14 +77,14 @@ namespace
 		void springs()
 		{
 			real timeStep2 = deltaTime * deltaTime;
-			for (entityClass *e : springComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : springComponent::component->entities())
 			{
 				GAME_GET_COMPONENT(spring, s, e);
 				CAGE_ASSERT_RUNTIME(s.restDistance >= 0, s.restDistance);
 				CAGE_ASSERT_RUNTIME(s.stiffness > 0 && s.stiffness < 1, s.stiffness);
 				CAGE_ASSERT_RUNTIME(s.damping > 0 && s.damping < 1, s.damping);
-				entityClass *e1 = entities()->getEntity(s.objects[0]);
-				entityClass *e2 = entities()->getEntity(s.objects[1]);
+				entityClass *e1 = entities()->get(s.objects[0]);
+				entityClass *e2 = entities()->get(s.objects[1]);
 				vec3 p1 = entPos(e1);
 				vec3 p2 = entPos(e2);
 				real m1 = entMass(e1);
@@ -107,7 +107,7 @@ namespace
 		void gravity()
 		{
 			vec3 g = vec3(0, -9.8, 0);
-			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : physicsComponent::component->entities())
 			{
 				GAME_GET_COMPONENT(physics, p, e);
 				addForce(e, p.mass * g);
@@ -131,7 +131,7 @@ namespace
 
 		void collisions()
 		{
-			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : physicsComponent::component->entities())
 			{
 				GAME_GET_COMPONENT(physics, p, e);
 				if (!p.collisionRadius.valid())
@@ -162,7 +162,7 @@ namespace
 
 		void applyAccelerations()
 		{
-			for (entityClass *e : physicsComponent::component->getComponentEntities()->entities())
+			for (entityClass *e : physicsComponent::component->entities())
 			{
 				CAGE_ASSERT_RUNTIME(acceleration[e].valid(), acceleration[e]);
 				GAME_GET_COMPONENT(physics, p, e);

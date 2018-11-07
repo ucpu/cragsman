@@ -140,7 +140,7 @@ namespace
 					t.gpuObject->setMeshName(0, 0, t.meshName);
 				}
 				{ // create the entity
-					t.entity = entities()->newAnonymousEntity();
+					t.entity = entities()->createAnonymous();
 					ENGINE_GET_COMPONENT(transform, tr, t.entity);
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
 					ENGINE_GET_COMPONENT(render, r, t.entity);

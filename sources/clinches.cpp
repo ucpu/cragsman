@@ -49,7 +49,7 @@ namespace
 		uint32 cnt = numeric_cast<uint32>(pow(real::E, max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
-			entityClass *e = entities()->newUniqueEntity();
+			entityClass *e = entities()->createUnique();
 			t.clinches.push_back(e);
 			ENGINE_GET_COMPONENT(transform, tr, e);
 			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
@@ -91,7 +91,7 @@ namespace
 					for (entityClass *e : t.clinches)
 					{
 						ENGINE_GET_COMPONENT(transform, tr, e);
-						spatialData->update(e->getName(), sphere(tr.position, 1));
+						spatialData->update(e->name(), sphere(tr.position, 1));
 					}
 				}
 				spatialData->rebuild();
@@ -132,14 +132,14 @@ void findInitialClinches(uint32 &count, entityClass **result)
 	}
 	std::vector<uint32> vec(spatialQuery->result().begin(), spatialQuery->result().end());
 	std::sort(vec.begin(), vec.end(), [](uint32 a, uint32 b) {
-		ENGINE_GET_COMPONENT(transform, ta, entities()->getEntity(a));
-		ENGINE_GET_COMPONENT(transform, tb, entities()->getEntity(b));
+		ENGINE_GET_COMPONENT(transform, ta, entities()->get(a));
+		ENGINE_GET_COMPONENT(transform, tb, entities()->get(b));
 		real da = distance(ta.position, vec3());
 		real db = distance(tb.position, vec3());
 		return da < db;
 	});
 	for (uint32 i = 0; i < count; i++)
-		result[i] = entities()->getEntity(vec[i]);
+		result[i] = entities()->get(vec[i]);
 }
 
 entityClass *findClinch(const vec3 &pos, real maxDist)
@@ -149,11 +149,11 @@ entityClass *findClinch(const vec3 &pos, real maxDist)
 		return nullptr;
 	std::vector<uint32> vec(spatialQuery->result().begin(), spatialQuery->result().end());
 	uint32 n = *std::min_element(vec.begin(), vec.end(), [pos](uint32 a, uint32 b) {
-		ENGINE_GET_COMPONENT(transform, ta, entities()->getEntity(a));
-		ENGINE_GET_COMPONENT(transform, tb, entities()->getEntity(b));
+		ENGINE_GET_COMPONENT(transform, ta, entities()->get(a));
+		ENGINE_GET_COMPONENT(transform, tb, entities()->get(b));
 		real da = distance(ta.position, pos);
 		real db = distance(tb.position, pos);
 		return da < db;
 	});
-	return entities()->getEntity(n);
+	return entities()->get(n);
 }
