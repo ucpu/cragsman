@@ -154,7 +154,7 @@ namespace
 			ENGINE_GET_COMPONENT(shadowmap, s, lig);
 			l.lightType = lightTypeEnum::Directional;
 			s.resolution = 4096;
-			s.worldRadius = vec3(150, 150, 200);
+			s.worldSize = vec3(150, 150, 200);
 		}
 
 		{ // cursor

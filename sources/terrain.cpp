@@ -135,9 +135,10 @@ namespace
 					t.gpuMesh->setTextures(textures);
 				}
 				{ // set object properties
-					t.gpuObject->setLodLevels(1);
-					t.gpuObject->setLodMeshes(0, 1);
-					t.gpuObject->setMeshName(0, 0, t.meshName);
+					float thresholds[1] = { 0 };
+					uint32 meshIndices[2] = { 0, 1 };
+					uint32 meshNames[1] = { t.meshName };
+					t.gpuObject->setLods(1, 1, thresholds, meshIndices, meshNames);
 				}
 				{ // create the entity
 					t.entity = entities()->createAnonymous();
