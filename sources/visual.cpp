@@ -104,7 +104,7 @@ namespace
 					{
 						ENGINE_GET_COMPONENT(light, pl, pe);
 						pl.color = color;
-						pl.attenuation = vec3(0, 10, 0);
+						pl.attenuation = vec3(1, 0, 1);
 					}
 				}
 			}
