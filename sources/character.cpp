@@ -86,7 +86,7 @@ namespace
 		ENGINE_GET_COMPONENT(transform, ts, entities()->get(cameraName));
 		ENGINE_GET_COMPONENT(camera, cs, entities()->get(cameraName));
 		mat4 view = mat4(ts.inverse());
-		mat4 proj = perspectiveProjection(cs.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
+		mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
 		mat4 inv = (proj * view).inverse();
 		vec4 pn = inv * vec4(px, py, -1, 1);
 		vec4 pf = inv * vec4(px, py, 1, 1);
@@ -141,7 +141,7 @@ namespace
 			cameraName = (cam = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, cam);
 			ENGINE_GET_COMPONENT(camera, c, cam);
-			c.ambientLight = vec3(1, 1, 1) * 0.05;
+			c.ambientLight = vec3(0.02);
 			c.near = 10;
 			c.far = 250;
 			c.effects = cameraEffectsFlags::CombinedPass;
