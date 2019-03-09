@@ -76,15 +76,6 @@ real terrainOffset(const vec2 &pos)
 		result -= pos[1] * 0.2;
 	}
 
-	/*
-	{ // low-frequency noise
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 1);
-		real scl = evaluateClamp(clouds1, pos * 0.004);
-		vec4 c = noiseCell(seed++, pos * (scl + 0.5) * 0.0007, noiseDistanceEnum::Chebychev);
-		result += (c[0] - c[1] - c[2] + c[3]) * 20;
-	}
-	*/
-
 	{ // horizontal slabs
 		static holder<noiseClass> clouds1 = newClouds(globalSeed + 4);
 		static holder<noiseClass> clouds2 = newClouds(globalSeed + 5);
@@ -95,8 +86,10 @@ real terrainOffset(const vec2 &pos)
 
 	{ // extra saliences
 		static holder<noiseClass> cell1 = newCell(globalSeed + 7);
-		real a = evaluateCell(cell1, pos * 0.05);
-		result += sharpEdge(a);
+		static holder<noiseClass> clouds1 = newClouds(globalSeed + 8);
+		real a = evaluateCell(cell1, pos * 0.0241);
+		real b = evaluateCell(clouds1, pos * 0.041);
+		result += sharpEdge(a + b - 0.4);
 	}
 
 	{ // medium-frequency waves
@@ -117,7 +110,15 @@ real terrainOffset(const vec2 &pos)
 		static holder<noiseClass> clouds2 = newClouds(globalSeed + 16);
 		real a = pow(evaluateClamp(clouds1, pos * vec2(0.036, 0.13)), 0.2);
 		real b = pow(evaluateClamp(clouds2, pos * vec2(0.047, 0.029)), 0.1);
-		result += min(a, b) * 2;
+		result += min(a, b) * 3;
+	}
+
+	{ // medium-frequency y-aligned cracks
+		static holder<noiseClass> clouds1 = newClouds(globalSeed + 17);
+		static holder<noiseClass> clouds2 = newClouds(globalSeed + 18);
+		real a = pow(evaluateClamp(clouds1, pos * vec2(0.11, 0.027) * 0.5), 0.2);
+		real b = pow(evaluateClamp(clouds2, pos * vec2(0.033, 0.051) * 0.5), 0.1);
+		result += min(a, b) * 3;
 	}
 
 	CAGE_ASSERT_RUNTIME(result.valid());
@@ -132,10 +133,12 @@ namespace
 	}
 
 	template<uint32 N, class T>
-	T ninterpolate(const T v[3], real f) // f is 0..1
+	T ninterpolate(const T v[N], real f) // f is 0..1
 	{
-		f *= N; // 0..N
+		CAGE_ASSERT_RUNTIME(f >= 0 && f < 1, f, N);
+		f *= (N - 1); // 0..(N-1)
 		uint32 i = numeric_cast<uint32>(f);
+		CAGE_ASSERT_RUNTIME(i + 1 < N, f, i, N);
 		return interpolate(v[i], v[i + 1], f - i);
 	}
 
@@ -144,9 +147,9 @@ namespace
 		static holder<noiseClass> value1 = newValue(globalSeed + 123);
 		static holder<noiseClass> value2 = newValue(globalSeed + 124);
 		static holder<noiseClass> value3 = newValue(globalSeed + 125);
-		real h = evaluateClamp(value1, pos * 0.5) * 0.5 + 0.25;
-		real s = evaluateClamp(value2, pos * 0.5);
-		real v = evaluateClamp(value3, pos * 0.5);
+		real h = evaluateClamp(value1, pos) * 0.5 + 0.25;
+		real s = evaluateClamp(value2, pos);
+		real v = evaluateClamp(value3, pos);
 		vec3 hsv = convertRgbToHsv(color) + (vec3(h, s, v) - 0.5) * deviation;
 		hsv[0] = (hsv[0] + 1) % 1;
 		return convertHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
@@ -167,9 +170,10 @@ namespace
 		default: CAGE_THROW_CRITICAL(notImplementedException, "unsupported colorsCount");
 		}
 
-		color = recolor(color, 0.1, pos);
+		color = recolor(color, 0.1, pos * 2.1);
 
-		roughness = 0.8;
+		static holder<noiseClass> clouds4 = newClouds(globalSeed + 148);
+		roughness = evaluateClamp(clouds4, pos * 1.132) * 0.4 + 0.3;
 		metallic = 0.02;
 	}
 
@@ -179,18 +183,19 @@ namespace
 		static holder<noiseClass> clouds2 = newClouds(globalSeed + 142, 5);
 		static holder<noiseClass> clouds3 = newClouds(globalSeed + 141, 5);
 		static holder<noiseClass> clouds4 = newClouds(globalSeed + 140);
+		static holder<noiseClass> clouds5 = newClouds(globalSeed + 139);
 		static holder<noiseClass> cell1 = newCell(globalSeed + 151, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
 		static holder<noiseClass> cell2 = newCell(globalSeed + 152, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
 		vec2 off = vec2(evaluateCell(cell1, pos * 0.063), evaluateCell(cell2, pos * 0.063));
-		if (evaluateClamp(clouds4, pos * 0.097 + off * 0.2) < 0.73)
+		if (evaluateClamp(clouds4, pos * 0.097 + off * 2.2) < 0.6)
 		{ // rock 1
 			color = convertHsvToRgb(vec3(
 				evaluateClamp(clouds1, pos * 0.134) * 0.01 + 0.08,
 				evaluateClamp(clouds2, pos * 0.344) * 0.2 + 0.2,
 				evaluateClamp(clouds3, pos * 0.100) * 0.4 + 0.55
 			));
-			roughness = 0.8;
-			metallic = 0.002;
+			roughness = evaluateClamp(clouds5, pos * 0.848) * 0.5 + 0.3;
+			metallic = 0.02;
 		}
 		else
 		{ // rock 2
@@ -199,7 +204,7 @@ namespace
 				evaluateClamp(clouds2, pos * 0.258) * 0.3 + 0.08,
 				evaluateClamp(clouds3, pos * 0.369) * 0.2 + 0.59
 			));
-			roughness = 0.6;
+			roughness = 0.5;
 			metallic = 0.049;
 		}
 	}
@@ -226,10 +231,11 @@ namespace
 		else
 			color = interpolate(colors[3], colors[0], f);
 
-		color = recolor(color, 0.1, pos);
+		color = recolor(color, 0.1, pos * 1.1);
 
-		roughness = 0.8;
-		metallic = 0.002;
+		static holder<noiseClass> clouds2 = newClouds(globalSeed + 154);
+		roughness = evaluateClamp(clouds2, pos * 0.941) * 0.3 + 0.4;
+		metallic = 0.02;
 	}
 
 	void baseWhite(const vec2 &pos, vec3 &color, real &roughness, real &metallic)
@@ -249,9 +255,11 @@ namespace
 		real n = evaluateClamp(value1, pos * 0.1 + off);
 		color = ninterpolate<3>(colors, n);
 
-		color = recolor(color, 0.1, pos);
+		color = recolor(color, 0.2, pos * 0.72);
+		color = recolor(color, 0.13, pos * 1.3);
 
-		roughness = 0.3;
+		static holder<noiseClass> clouds3 = newClouds(globalSeed + 256);
+		roughness = pow(evaluateClamp(clouds3, pos * 1.441), 0.5) * 0.7 + 0.01;
 		metallic = 0.05;
 	}
 
@@ -275,8 +283,9 @@ namespace
 
 			static holder<noiseClass> value1 = newValue(globalSeed + 741);
 			color = interpolate(vein[0], vein[1], evaluateClamp(value1, pos));
-			roughness = 0.7;
-			metallic = 0.98;
+			static holder<noiseClass> clouds2 = newClouds(globalSeed + 154);
+			roughness = evaluateClamp(clouds2, pos * 0.718) * 0.3 + 0.3;
+			metallic = 0.6;
 		}
 		else
 		{ // the rocks
@@ -331,13 +340,13 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 
 	{ // white glistering spots
 		static holder<noiseClass> cell1 = newCell(globalSeed + 6975);
-		if (evaluateCell(cell1, pos * 0.234) > 0.52)
+		if (evaluateCell(cell1, pos * 0.084) > 0.95)
 		{
 			static holder<noiseClass> clouds2 = newClouds(globalSeed + 554, 2);
-			real c = evaluateClamp(clouds2, pos * 3) * 0.7 + 0.5;
-			color = vec3(c, c, c);
-			roughness = 0.05;
-			metallic = 0.97;
+			real c = evaluateClamp(clouds2, pos * 3) * 0.2 + 0.8;
+			color = vec3(c);
+			roughness = 0.2;
+			metallic = 0.4;
 		}
 	}
 
@@ -369,19 +378,21 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 		if (vn > thr + 0.2)
 		{
 			static holder<noiseClass> clouds5 = newClouds(globalSeed + 558);
-			real mask = evaluateClamp(clouds5, pos * 1.723);
+			real mask = evaluateClamp(clouds5, pos * 2.423);
 			real m = sharpEdge(mask);
 			static holder<noiseClass> value1 = newValue(globalSeed + 823);
 			static holder<noiseClass> value2 = newValue(globalSeed + 824);
 			static holder<noiseClass> value3 = newValue(globalSeed + 825);
 			vec3 grass = convertHsvToRgb(vec3(
-				evaluateClamp(value1, pos) * 0.2 + 0.18,
+				evaluateClamp(value1, pos) * 0.3 + 0.13,
 				evaluateClamp(value2, pos) * 0.2 + 0.5,
 				evaluateClamp(value3, pos) * 0.2 + 0.5
 			));
+			static holder<noiseClass> clouds6 = newClouds(globalSeed + 558);
+			real r = evaluateClamp(clouds6, pos * 1.23) * 0.4 + 0.2;
 			color = interpolate(color, grass, m);
-			roughness = interpolate(roughness, 0.3, m);
-			metallic = interpolate(metallic, 0, m);
+			roughness = interpolate(roughness, r, m);
+			metallic = interpolate(metallic, 0.01, m);
 		}
 	}
 }

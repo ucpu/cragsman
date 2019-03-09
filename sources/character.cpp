@@ -141,10 +141,11 @@ namespace
 			cameraName = (cam = entities()->createUnique())->name();
 			ENGINE_GET_COMPONENT(transform, t, cam);
 			ENGINE_GET_COMPONENT(camera, c, cam);
-			c.ambientLight = vec3(0.02);
+			c.ambientLight = vec3(0.03);
 			c.near = 10;
-			c.far = 250;
+			c.far = 500;
 			c.effects = cameraEffectsFlags::CombinedPass;
+			//c.effects = cameraEffectsFlags::GammaCorrection;
 		}
 
 		{ // light
@@ -154,7 +155,7 @@ namespace
 			ENGINE_GET_COMPONENT(light, l, lig);
 			ENGINE_GET_COMPONENT(shadowmap, s, lig);
 			l.lightType = lightTypeEnum::Directional;
-			l.color *= 2;
+			l.color = vec3(3);
 			s.resolution = 4096;
 			s.worldSize = vec3(150, 150, 200);
 		}

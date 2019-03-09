@@ -248,7 +248,7 @@ vec3 terrainIntersection(const line &ln)
 	collisionQuery->query(ln);
 	if (!collisionQuery->name())
 	{
-		// use old, less acurate method
+		// use old, less accurate method
 		real dst = ln.a()[2] / dot(ln.direction, vec3(0, 0, -1));
 		vec3 base = ln.a() + ln.direction * dst;
 		CAGE_ASSERT_RUNTIME(abs(base[2]) < 1e-5, base);

@@ -43,7 +43,7 @@ vec3 colorDeviation(const vec3 &color, real deviation)
 {
 	vec3 hsv = convertRgbToHsv(color) + (vec3(randomChance(), randomChance(), randomChance()) - 0.5) * deviation;
 	hsv[0] = (hsv[0] + 1) % 1;
-	return convertHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
+	return convertHsvToRgb(clamp(hsv, vec3(), vec3(1)));
 }
 
 namespace
@@ -103,8 +103,8 @@ namespace
 					if (randomChance() < 0.2)
 					{
 						ENGINE_GET_COMPONENT(light, pl, pe);
-						pl.color = color;
-						pl.attenuation = vec3(1, 0, 1);
+						pl.color = color * 1.5;
+						pl.attenuation = vec3(0, 0, 0.15);
 					}
 				}
 			}

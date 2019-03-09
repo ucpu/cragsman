@@ -233,7 +233,7 @@ namespace
 
 	holder<textureClass> dispatchTexture(holder<pngImageClass> &image)
 	{
-		holder<textureClass> t = newTexture(window());
+		holder<textureClass> t = newTexture();
 		switch (image->channels())
 		{
 		case 2:
@@ -278,7 +278,7 @@ namespace
 
 	holder<meshClass> dispatchMesh(std::vector<vertexStruct> &vertices)
 	{
-		holder<meshClass> m = newMesh(window());
+		holder<meshClass> m = newMesh();
 		meshHeaderStruct::materialDataStruct material;
 		const std::vector<uint32> &indices = meshIndices();
 		m->setBuffers(numeric_cast<uint32>(vertices.size()), sizeof(vertexStruct), vertices.data(), numeric_cast<uint32>(indices.size()), indices.data(), sizeof(material), &material);
