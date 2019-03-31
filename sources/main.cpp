@@ -43,7 +43,7 @@ int main(int argc, const char *args[])
 		window()->events.windowClose.attach(windowCloseListener);
 
 		window()->title("Cragsman");
-		window()->modeSetWindowed(windowFlags::Border | windowFlags::Resizeable);
+		window()->setMaximized();
 
 		{
 			holder<engineProfilingClass> engineProfiling = newEngineProfiling();

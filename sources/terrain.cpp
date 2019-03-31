@@ -132,7 +132,7 @@ namespace
 					textures[0] = t.albedoName;
 					textures[1] = t.materialName;
 					//textures[2] = t.normalName;
-					t.gpuMesh->setTextures(textures);
+					t.gpuMesh->setTextureNames(textures);
 				}
 				{ // set object properties
 					float thresholds[1] = { 0 };
