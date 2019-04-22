@@ -46,7 +46,7 @@ namespace
 	{
 		CAGE_ASSERT_RUNTIME(t.clinches.empty());
 		randomGenerator rg(detail::hash(t.pos.x), detail::hash(t.pos.y));
-		uint32 cnt = numeric_cast<uint32>(pow(real::E, max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
+		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
 			entityClass *e = entities()->createUnique();
@@ -124,7 +124,7 @@ namespace
 
 void findInitialClinches(uint32 &count, entityClass **result)
 {
-	spatialQuery->intersection(aabb::Universe);
+	spatialQuery->intersection(aabb::Universe());
 	if (spatialQuery->resultCount() < count)
 	{
 		count = 0;

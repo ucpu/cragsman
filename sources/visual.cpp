@@ -34,7 +34,7 @@ entityClass *newParticle(const vec3 &position, const vec3 &velocity, const vec3 
 	r.object = hashString("cragsman/particle/particle.object");
 	p.mass = mass;
 	p.velocity = velocity;
-	p.collisionRadius = real::Nan;
+	p.collisionRadius = real::Nan();
 	to.ttl = ttl;
 	return e;
 }
@@ -93,7 +93,7 @@ namespace
 #endif // CAGE_DEBUG
 				for (uint32 i = 1; i < cnt - 1; i++)
 				{
-					real deviation = sin(rads::Stright * real(i) / cnt);
+					real deviation = sin(rads::Stright() * real(i) / cnt);
 					real portion = (randomChance() + i) / cnt;
 					vec3 color = colorDeviation(v.color, 0.1);
 					entityClass *pe = newParticle(

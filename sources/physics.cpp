@@ -21,7 +21,7 @@ springComponent::springComponent() : objects{0, 0}
 
 real sphereVolume(real radius)
 {
-	return 4 * real::Pi * pow(radius, 3) / 3;
+	return 4 * real::Pi() * pow(radius, 3) / 3;
 }
 
 namespace
@@ -55,7 +55,7 @@ namespace
 				CAGE_ASSERT_RUNTIME(p.mass > 1e-7, p.mass);
 				return p.mass;
 			}
-			return real::PositiveInfinity;
+			return real::Infinity();
 		}
 
 		static vec3 entVel(entityClass *e)

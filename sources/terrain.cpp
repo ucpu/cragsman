@@ -287,7 +287,7 @@ namespace
 		m->setAttribute(CAGE_SHADER_ATTRIB_IN_NORMAL, 3, GL_FLOAT, sizeof(vertexStruct), 12);
 		m->setAttribute(CAGE_SHADER_ATTRIB_IN_UV, 2, GL_FLOAT, sizeof(vertexStruct), 24);
 		real l = tileLength * 0.5;
-		m->setBoundingBox(aabb(vec3(-l, -l, real::NegativeInfinity), vec3(l, l, real::PositiveInfinity)));
+		m->setBoundingBox(aabb(vec3(-l, -l, -real::Infinity()), vec3(l, l, real::Infinity())));
 		std::vector<vertexStruct>().swap(vertices);
 		return m;
 	}

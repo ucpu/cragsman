@@ -63,7 +63,7 @@ namespace
 	{
 		v = v % 1;
 		if (v > 0.8)
-			return sin(rads::Stright * (v - 0.8) / 0.2 + rads::Right);
+			return sin(rads::Stright() * (v - 0.8) / 0.2 + rads::Right());
 		return v / 0.8;
 	}
 }

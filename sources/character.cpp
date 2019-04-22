@@ -202,7 +202,7 @@ namespace
 				}
 				{ // hand
 					ENGINE_GET_COMPONENT(transform, t, hand);
-					rads angle = real(i) / characterHandsCount * rads::Full;
+					rads angle = real(i) / characterHandsCount * rads::Full();
 					vec2 pos = vec2(cos(angle), sin(angle)) * 20;
 					t.position = vec3(pos, terrainOffset(pos));
 					ENGINE_GET_COMPONENT(render, r, hand);
@@ -248,7 +248,7 @@ namespace
 				playerPosition = t.position;
 			}
 			else
-				playerPosition = vec3::Nan;
+				playerPosition = vec3::Nan();
 		}
 
 		{ // cursor
