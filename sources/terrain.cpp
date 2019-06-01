@@ -10,9 +10,9 @@
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
 #include <cage-core/concurrent.h>
-#include <cage-core/assets.h>
+#include <cage-core/assetManager.h>
 #include <cage-core/memoryBuffer.h>
-#include <cage-core/png.h>
+#include <cage-core/image.h>
 #include <cage-core/collider.h>
 
 #include <cage-client/core.h>
@@ -76,11 +76,11 @@ namespace
 		std::vector<vertexStruct> cpuMesh;
 		holder<meshClass> gpuMesh;
 		holder<textureClass> gpuAlbedo;
-		holder<pngImageClass> cpuAlbedo;
+		holder<imageClass> cpuAlbedo;
 		holder<textureClass> gpuMaterial;
-		holder<pngImageClass> cpuMaterial;
+		holder<imageClass> cpuMaterial;
 		//holder<textureClass> gpuNormal;
-		//holder<pngImageClass> cpuNormal;
+		//holder<imageClass> cpuNormal;
 		holder<objectClass> gpuObject;
 		tilePosStruct pos;
 		entityClass *entity;
@@ -231,7 +231,7 @@ namespace
 	// DISPATCH
 	/////////////////////////////////////////////////////////////////////////////
 
-	holder<textureClass> dispatchTexture(holder<pngImageClass> &image)
+	holder<textureClass> dispatchTexture(holder<imageClass> &image)
 	{
 		holder<textureClass> t = newTexture();
 		switch (image->channels())
@@ -404,9 +404,9 @@ namespace
 		t.cpuCollider->rebuild();
 	}
 
-	void initializeTexture(holder<pngImageClass> &img, uint32 components)
+	void initializeTexture(holder<imageClass> &img, uint32 components)
 	{
-		img = newPngImage();
+		img = newImage();
 		img->empty(tileTextureResolution, tileTextureResolution, components);
 	}
 

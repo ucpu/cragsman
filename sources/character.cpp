@@ -32,7 +32,7 @@ namespace
 	uint32 characterHandJoints[characterHandsCount];
 	uint32 currentHand;
 
-	variableSmoothingBufferStruct<vec3> smoothBodyPosition;
+	variableSmoothingBuffer<vec3> smoothBodyPosition;
 
 	entityClass *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
 	{
