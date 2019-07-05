@@ -13,25 +13,25 @@ namespace
 {
 	struct boulderComponent
 	{
-		static componentClass *component;
+		static entityComponent *component;
 	};
 
-	componentClass *boulderComponent::component;
+	entityComponent *boulderComponent::component;
 
 	bool engineUpdate()
 	{
 		if (!characterBody)
 			return false;
-		ENGINE_GET_COMPONENT(transform, pt, entities()->get(characterBody));
+		CAGE_COMPONENT_ENGINE(transform, pt, entities()->get(characterBody));
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
-			entityClass *e = entities()->createAnonymous();
-			ENGINE_GET_COMPONENT(transform, t, e);
+			entity *e = entities()->createAnonymous();
+			CAGE_COMPONENT_ENGINE(transform, t, e);
 			t.scale = randomChance() + 1.5;
 			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
 			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
-			ENGINE_GET_COMPONENT(render, r, e);
+			CAGE_COMPONENT_ENGINE(render, r, e);
 			r.object = hashString("cragsman/boulder/boulder.object");
 			{
 				real dummy;
@@ -42,10 +42,10 @@ namespace
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
 			GAME_GET_COMPONENT(boulder, br, e);
 		}
-		std::vector<entityClass*> entsToDestroy;
-		for (entityClass *e : boulderComponent::component->entities())
+		std::vector<entity*> entsToDestroy;
+		for (entity *e : boulderComponent::component->entities())
 		{ // rotate boulders
-			ENGINE_GET_COMPONENT(transform, t, e);
+			CAGE_COMPONENT_ENGINE(transform, t, e);
 			if (t.position[1] < pt.position[1] - 150)
 				entsToDestroy.push_back(e);
 			else

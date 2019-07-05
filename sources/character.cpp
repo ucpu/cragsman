@@ -34,9 +34,9 @@ namespace
 
 	variableSmoothingBuffer<vec3> smoothBodyPosition;
 
-	entityClass *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
+	entity *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
 	{
-		entityClass *spring = entities()->createUnique();
+		entity *spring = entities()->createUnique();
 		GAME_GET_COMPONENT(spring, s, spring);
 		s.objects[0] = a;
 		s.objects[1] = b;
@@ -60,15 +60,15 @@ namespace
 
 	void jointHandClinch(uint32 handIndex, uint32 clinchName)
 	{
-		entityClass *e = addSpring(characterHands[handIndex], clinchName, 0, 0.3, 0.3);
+		entity *e = addSpring(characterHands[handIndex], clinchName, 0, 0.3, 0.3);
 		characterHandJoints[handIndex] = e->name();
 	}
 
 	void removeSprings(uint32 n)
 	{
 		auto sns = springComponent::component->entities();
-		std::vector<entityClass *> ses(sns.begin(), sns.end());
-		for (entityClass *e : ses)
+		std::vector<entity *> ses(sns.begin(), sns.end());
+		for (entity *e : ses)
 		{
 			GAME_GET_COMPONENT(spring, s, e);
 			if (s.objects[0] == n || s.objects[1] == n)
@@ -76,15 +76,15 @@ namespace
 		}
 	}
 
-	vec3 screenToWorld(const pointStruct &point)
+	vec3 screenToWorld(const ivec2 &point)
 	{
-		pointStruct res = window()->resolution();
+		ivec2 res = window()->resolution();
 		vec2 p = vec2(point.x, point.y);
 		p /= vec2(res.x, res.y);
 		p = p * 2 - 1;
 		real px = p[0], py = -p[1];
-		ENGINE_GET_COMPONENT(transform, ts, entities()->get(cameraName));
-		ENGINE_GET_COMPONENT(camera, cs, entities()->get(cameraName));
+		CAGE_COMPONENT_ENGINE(transform, ts, entities()->get(cameraName));
+		CAGE_COMPONENT_ENGINE(camera, cs, entities()->get(cameraName));
 		mat4 view = mat4(ts.inverse());
 		mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
 		mat4 inv = (proj * view).inverse();
@@ -95,12 +95,12 @@ namespace
 		return terrainIntersection(makeSegment(near, far));
 	}
 
-	bool mousePress(mouseButtonsFlags b, modifiersFlags m, const pointStruct &p)
+	bool mousePress(mouseButtonsFlags b, modifiersFlags m, const ivec2 &p)
 	{
 		if (b == mouseButtonsFlags::Left && m == modifiersFlags::None)
 		{
-			ENGINE_GET_COMPONENT(transform, ht, entities()->get(characterHands[currentHand]));
-			entityClass *clinch = findClinch(ht.position, 3);
+			CAGE_COMPONENT_ENGINE(transform, ht, entities()->get(characterHands[currentHand]));
+			entity *clinch = findClinch(ht.position, 3);
 			if (clinch)
 			{
 				uint32 clinchName = clinch->name();
@@ -127,7 +127,7 @@ namespace
 
 	bool initializeTheGame()
 	{
-		std::vector<entityClass*> clinches;
+		std::vector<entity*> clinches;
 		{
 			clinches.resize(characterHandsCount);
 			uint32 cnt = characterHandsCount;
@@ -137,10 +137,10 @@ namespace
 		}
 
 		{ // camera
-			entityClass *cam;
+			entity *cam;
 			cameraName = (cam = entities()->createUnique())->name();
-			ENGINE_GET_COMPONENT(transform, t, cam);
-			ENGINE_GET_COMPONENT(camera, c, cam);
+			CAGE_COMPONENT_ENGINE(transform, t, cam);
+			CAGE_COMPONENT_ENGINE(camera, c, cam);
 			c.ambientLight = vec3(0.03);
 			c.near = 10;
 			c.far = 500;
@@ -149,11 +149,11 @@ namespace
 		}
 
 		{ // light
-			entityClass *lig;
+			entity *lig;
 			lightName = (lig = entities()->createUnique())->name();
-			ENGINE_GET_COMPONENT(transform, t, lig);
-			ENGINE_GET_COMPONENT(light, l, lig);
-			ENGINE_GET_COMPONENT(shadowmap, s, lig);
+			CAGE_COMPONENT_ENGINE(transform, t, lig);
+			CAGE_COMPONENT_ENGINE(light, l, lig);
+			CAGE_COMPONENT_ENGINE(shadowmap, s, lig);
 			l.lightType = lightTypeEnum::Directional;
 			l.color = vec3(3);
 			s.resolution = 4096;
@@ -161,16 +161,16 @@ namespace
 		}
 
 		{ // cursor
-			entityClass *cur;
+			entity *cur;
 			cursorName = (cur = entities()->createUnique())->name();
-			ENGINE_GET_COMPONENT(transform, t, cur);
+			CAGE_COMPONENT_ENGINE(transform, t, cur);
 		}
 
 		{ // body
-			entityClass *body;
+			entity *body;
 			characterBody = (body = entities()->createUnique())->name();
-			ENGINE_GET_COMPONENT(transform, t, body);
-			ENGINE_GET_COMPONENT(render, r, body);
+			CAGE_COMPONENT_ENGINE(transform, t, body);
+			CAGE_COMPONENT_ENGINE(render, r, body);
 			r.object = hashString("cragsman/character/body.object");
 			GAME_GET_COMPONENT(physics, p, body);
 			p.collisionRadius = 3;
@@ -180,32 +180,32 @@ namespace
 		{ // hands
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				entityClass *hand = nullptr, *elbow = nullptr, *shoulder = nullptr;
+				entity *hand = nullptr, *elbow = nullptr, *shoulder = nullptr;
 				characterShoulders[i] = (shoulder = entities()->createUnique())->name();
 				characterElbows[i] = (elbow = entities()->createUnique())->name();
 				characterHands[i] = (hand = entities()->createUnique())->name();
 				{ // shoulder
-					ENGINE_GET_COMPONENT(transform, t, shoulder);
-					ENGINE_GET_COMPONENT(render, r, shoulder);
+					CAGE_COMPONENT_ENGINE(transform, t, shoulder);
+					CAGE_COMPONENT_ENGINE(render, r, shoulder);
 					r.object = hashString("cragsman/character/shoulder.object");
 					GAME_GET_COMPONENT(physics, p, shoulder);
 					p.collisionRadius = 2.3067 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // elbow
-					ENGINE_GET_COMPONENT(transform, t, elbow);
-					ENGINE_GET_COMPONENT(render, r, elbow);
+					CAGE_COMPONENT_ENGINE(transform, t, elbow);
+					CAGE_COMPONENT_ENGINE(render, r, elbow);
 					r.object = hashString("cragsman/character/elbow.object");
 					GAME_GET_COMPONENT(physics, p, elbow);
 					p.collisionRadius = 2.56723 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // hand
-					ENGINE_GET_COMPONENT(transform, t, hand);
+					CAGE_COMPONENT_ENGINE(transform, t, hand);
 					rads angle = real(i) / characterHandsCount * rads::Full();
 					vec2 pos = vec2(cos(angle), sin(angle)) * 20;
 					t.position = vec3(pos, terrainOffset(pos));
-					ENGINE_GET_COMPONENT(render, r, hand);
+					CAGE_COMPONENT_ENGINE(render, r, hand);
 					r.object = hashString("cragsman/character/hand.object");
 					GAME_GET_COMPONENT(physics, p, hand);
 					p.collisionRadius = 1.1;
@@ -217,12 +217,12 @@ namespace
 				}
 				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
 				{
-					entityClass *e = addSpring(characterShoulders[i], characterElbows[i], 7, 0.05, 0.1);
+					entity *e = addSpring(characterShoulders[i], characterElbows[i], 7, 0.05, 0.1);
 					GAME_GET_COMPONENT(springVisual, sv, e);
 					sv.color = colorDeviation(colorIndex(i), 0.1);
 				}
 				{
-					entityClass *e = addSpring(characterElbows[i], characterHands[i], 10, 0.05, 0.1);
+					entity *e = addSpring(characterElbows[i], characterHands[i], 10, 0.05, 0.1);
 					GAME_GET_COMPONENT(springVisual, sv, e);
 					sv.color = colorDeviation(colorIndex(i), 0.1);
 				}
@@ -244,7 +244,7 @@ namespace
 		{ // player position
 			if (characterBody && entities()->has(characterBody))
 			{
-				ENGINE_GET_COMPONENT(transform, t, entities()->get(characterBody));
+				CAGE_COMPONENT_ENGINE(transform, t, entities()->get(characterBody));
 				playerPosition = t.position;
 			}
 			else
@@ -252,22 +252,22 @@ namespace
 		}
 
 		{ // cursor
-			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
+			CAGE_COMPONENT_ENGINE(transform, bt, entities()->get(characterBody));
 			vec3 target = screenToWorld(window()->mousePosition());
 			if (target.valid())
 			{
 				static const real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = (target - bt.position).normalize() * maxBodyCursorDistance + bt.position;
-				ENGINE_GET_COMPONENT(transform, ct, entities()->get(cursorName));
+				CAGE_COMPONENT_ENGINE(transform, ct, entities()->get(cursorName));
 				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
 				ct.position = target;
 			}
 		}
 
 		{ // camera
-			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
-			ENGINE_GET_COMPONENT(transform, ct, entities()->get(cameraName));
+			CAGE_COMPONENT_ENGINE(transform, bt, entities()->get(characterBody));
+			CAGE_COMPONENT_ENGINE(transform, ct, entities()->get(cameraName));
 			smoothBodyPosition.add(bt.position);
 			vec3 sbp = smoothBodyPosition.smooth();
 			ct.position = sbp + vec3(0, 0, 100);
@@ -276,8 +276,8 @@ namespace
 		}
 
 		{ // light
-			ENGINE_GET_COMPONENT(transform, bt, entities()->get(characterBody));
-			ENGINE_GET_COMPONENT(transform, lt, entities()->get(lightName));
+			CAGE_COMPONENT_ENGINE(transform, bt, entities()->get(characterBody));
+			CAGE_COMPONENT_ENGINE(transform, lt, entities()->get(lightName));
 			lt.position = bt.position;
 			lt.orientation = sunLightOrientation(vec2(playerPosition));
 		}
@@ -285,8 +285,8 @@ namespace
 		{ // hands orientations
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				ENGINE_GET_COMPONENT(transform, ht, entities()->get(characterHands[i]));
-				ENGINE_GET_COMPONENT(transform, et, entities()->get(characterElbows[i]));
+				CAGE_COMPONENT_ENGINE(transform, ht, entities()->get(characterHands[i]));
+				CAGE_COMPONENT_ENGINE(transform, et, entities()->get(characterElbows[i]));
 				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
 			}
 		}

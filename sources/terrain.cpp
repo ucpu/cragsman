@@ -13,7 +13,7 @@
 #include <cage-core/assetManager.h>
 #include <cage-core/memoryBuffer.h>
 #include <cage-core/image.h>
-#include <cage-core/collider.h>
+#include <cage-core/collisionMesh.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
@@ -72,18 +72,18 @@ namespace
 
 	struct tileStruct
 	{
-		holder<colliderClass> cpuCollider;
+		holder<collisionMesh> cpuCollider;
 		std::vector<vertexStruct> cpuMesh;
-		holder<meshClass> gpuMesh;
-		holder<textureClass> gpuAlbedo;
-		holder<imageClass> cpuAlbedo;
-		holder<textureClass> gpuMaterial;
-		holder<imageClass> cpuMaterial;
-		//holder<textureClass> gpuNormal;
-		//holder<imageClass> cpuNormal;
-		holder<objectClass> gpuObject;
+		holder<renderMesh> gpuMesh;
+		holder<renderTexture> gpuAlbedo;
+		holder<image> cpuAlbedo;
+		holder<renderTexture> gpuMaterial;
+		holder<image> cpuMaterial;
+		//holder<renderTexture> gpuNormal;
+		//holder<image> cpuNormal;
+		holder<renderObject> gpuObject;
 		tilePosStruct pos;
-		entityClass *entity;
+		entity *entity;
 		std::atomic<tileStatusEnum> status;
 		uint32 meshName;
 		uint32 albedoName;
@@ -142,9 +142,9 @@ namespace
 				}
 				{ // create the entity
 					t.entity = entities()->createAnonymous();
-					ENGINE_GET_COMPONENT(transform, tr, t.entity);
+					CAGE_COMPONENT_ENGINE(transform, tr, t.entity);
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
-					ENGINE_GET_COMPONENT(render, r, t.entity);
+					CAGE_COMPONENT_ENGINE(render, r, t.entity);
 					r.object = t.objectName;
 				}
 				t.status = tileStatusEnum::Ready;
@@ -195,16 +195,16 @@ namespace
 				//t.normalName = assets()->generateUniqueName();
 				t.meshName = assets()->generateUniqueName();
 				t.objectName = assets()->generateUniqueName();
-				assets()->fabricate(assetSchemeIndexTexture, t.albedoName, string() + "albedo " + t.pos);
-				assets()->fabricate(assetSchemeIndexTexture, t.materialName, string() + "material " + t.pos);
-				//assets()->fabricate(assetSchemeIndexTexture, t.normalName, string() + "normal " + t.pos);
+				assets()->fabricate(assetSchemeIndexRenderTexture, t.albedoName, string() + "albedo " + t.pos);
+				assets()->fabricate(assetSchemeIndexRenderTexture, t.materialName, string() + "material " + t.pos);
+				//assets()->fabricate(assetSchemeIndexRenderTexture, t.normalName, string() + "normal " + t.pos);
 				assets()->fabricate(assetSchemeIndexMesh, t.meshName, string() + "mesh " + t.pos);
-				assets()->fabricate(assetSchemeIndexObject, t.objectName, string() + "object " + t.pos);
-				assets()->set<assetSchemeIndexTexture, textureClass>(t.albedoName, t.gpuAlbedo.get());
-				assets()->set<assetSchemeIndexTexture, textureClass>(t.materialName, t.gpuMaterial.get());
-				//assets()->set<assetSchemeIndexTexture, textureClass>(t.normalName, t.gpuNormal.get());
-				assets()->set<assetSchemeIndexMesh, meshClass>(t.meshName, t.gpuMesh.get());
-				assets()->set<assetSchemeIndexObject, objectClass>(t.objectName, t.gpuObject.get());
+				assets()->fabricate(assetSchemeIndexRenderObject, t.objectName, string() + "object " + t.pos);
+				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.albedoName, t.gpuAlbedo.get());
+				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.materialName, t.gpuMaterial.get());
+				//assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.normalName, t.gpuNormal.get());
+				assets()->set<assetSchemeIndexMesh, renderMesh>(t.meshName, t.gpuMesh.get());
+				assets()->set<assetSchemeIndexRenderObject, renderObject>(t.objectName, t.gpuObject.get());
 				t.status = tileStatusEnum::Entity;
 				break;
 			}
@@ -231,9 +231,9 @@ namespace
 	// DISPATCH
 	/////////////////////////////////////////////////////////////////////////////
 
-	holder<textureClass> dispatchTexture(holder<imageClass> &image)
+	holder<renderTexture> dispatchTexture(holder<image> &image)
 	{
-		holder<textureClass> t = newTexture();
+		holder<renderTexture> t = newRenderTexture();
 		switch (image->channels())
 		{
 		case 2:
@@ -276,10 +276,10 @@ namespace
 		return indices;
 	}
 
-	holder<meshClass> dispatchMesh(std::vector<vertexStruct> &vertices)
+	holder<renderMesh> dispatchMesh(std::vector<vertexStruct> &vertices)
 	{
-		holder<meshClass> m = newMesh();
-		meshHeaderStruct::materialDataStruct material;
+		holder<renderMesh> m = newRenderMesh();
+		renderMeshHeader::materialData material;
 		const std::vector<uint32> &indices = meshIndices();
 		m->setBuffers(numeric_cast<uint32>(vertices.size()), sizeof(vertexStruct), vertices.data(), numeric_cast<uint32>(indices.size()), indices.data(), sizeof(material), &material);
 		m->setPrimitiveType(GL_TRIANGLES);
@@ -292,9 +292,9 @@ namespace
 		return m;
 	}
 
-	holder<objectClass> dispatchObject()
+	holder<renderObject> dispatchObject()
 	{
-		holder<objectClass> o = newObject();
+		holder<renderObject> o = newRenderObject();
 		return o;
 	}
 
@@ -340,8 +340,8 @@ namespace
 
 	tileStruct *generatorChooseTile()
 	{
-		static holder<mutexClass> mut = newMutex();
-		scopeLock<mutexClass> lock(mut);
+		static holder<syncMutex> mut = newSyncMutex();
+		scopeLock<syncMutex> lock(mut);
 		tileStruct *result = nullptr;
 		for (tileStruct &t : tiles)
 		{
@@ -389,7 +389,7 @@ namespace
 	void generateCollider(tileStruct &t)
 	{
 		transform m = transform(vec3(t.pos.x, t.pos.y, 0) * tileLength);
-		t.cpuCollider = newCollider();
+		t.cpuCollider = newCollisionMesh();
 		const std::vector<uint32> &ids = meshIndices();
 		uint32 cnt = numeric_cast<uint32>(ids.size() / 3);
 		for (uint32 i = 0; i < cnt; i++)
@@ -404,7 +404,7 @@ namespace
 		t.cpuCollider->rebuild();
 	}
 
-	void initializeTexture(holder<imageClass> &img, uint32 components)
+	void initializeTexture(holder<image> &img, uint32 components)
 	{
 		img = newImage();
 		img->empty(tileTextureResolution, tileTextureResolution, components);
@@ -450,7 +450,7 @@ namespace
 	// INITIALIZE
 	/////////////////////////////////////////////////////////////////////////////
 
-	std::vector<holder<threadClass>> generatorThreads;
+	std::vector<holder<threadHandle>> generatorThreads;
 
 	class callbacksInitClass
 	{

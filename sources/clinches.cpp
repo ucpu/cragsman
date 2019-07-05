@@ -27,13 +27,13 @@ namespace
 {
 	const real tileLength = 70; // real world size of a tile (in 1 dimension)
 
-	holder<spatialDataClass> spatialData;
-	holder<spatialQueryClass> spatialQuery;
+	holder<spatialData> spatialSearchData;
+	holder<spatialQuery> spatialSearchQuery;
 
 	struct tileStruct
 	{
 		tilePosStruct pos;
-		std::vector<entityClass *> clinches;
+		std::vector<entity *> clinches;
 		real distanceToPlayer() const
 		{
 			return pos.distanceToPlayer(tileLength);
@@ -49,12 +49,12 @@ namespace
 		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
-			entityClass *e = entities()->createUnique();
+			entity *e = entities()->createUnique();
 			t.clinches.push_back(e);
-			ENGINE_GET_COMPONENT(transform, tr, e);
+			CAGE_COMPONENT_ENGINE(transform, tr, e);
 			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
 			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
-			ENGINE_GET_COMPONENT(render, r, e);
+			CAGE_COMPONENT_ENGINE(render, r, e);
 			r.object = hashString("cragsman/clinch/clinch.object");
 		}
 	}
@@ -85,16 +85,16 @@ namespace
 		{ // update spatial
 			if (changes)
 			{
-				spatialData->clear();
+				spatialSearchData->clear();
 				for (tileStruct &t : tiles)
 				{
-					for (entityClass *e : t.clinches)
+					for (entity *e : t.clinches)
 					{
-						ENGINE_GET_COMPONENT(transform, tr, e);
-						spatialData->update(e->name(), sphere(tr.position, 1));
+						CAGE_COMPONENT_ENGINE(transform, tr, e);
+						spatialSearchData->update(e->name(), sphere(tr.position, 1));
 					}
 				}
-				spatialData->rebuild();
+				spatialSearchData->rebuild();
 			}
 		}
 		return false;
@@ -102,8 +102,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		spatialData = newSpatialData(spatialDataCreateConfig());
-		spatialQuery = newSpatialQuery(spatialData.get());
+		spatialSearchData = newSpatialData(spatialDataCreateConfig());
+		spatialSearchQuery = newSpatialQuery(spatialSearchData.get());
 		return false;
 	}
 
@@ -122,18 +122,18 @@ namespace
 	} callbacksInitInstance;
 }
 
-void findInitialClinches(uint32 &count, entityClass **result)
+void findInitialClinches(uint32 &count, entity **result)
 {
-	spatialQuery->intersection(aabb::Universe());
-	if (spatialQuery->resultCount() < count)
+	spatialSearchQuery->intersection(aabb::Universe());
+	if (spatialSearchQuery->resultCount() < count)
 	{
 		count = 0;
 		return;
 	}
-	std::vector<uint32> vec(spatialQuery->result().begin(), spatialQuery->result().end());
+	std::vector<uint32> vec(spatialSearchQuery->result().begin(), spatialSearchQuery->result().end());
 	std::sort(vec.begin(), vec.end(), [](uint32 a, uint32 b) {
-		ENGINE_GET_COMPONENT(transform, ta, entities()->get(a));
-		ENGINE_GET_COMPONENT(transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
+		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
 		real da = distance(ta.position, vec3());
 		real db = distance(tb.position, vec3());
 		return da < db;
@@ -142,15 +142,15 @@ void findInitialClinches(uint32 &count, entityClass **result)
 		result[i] = entities()->get(vec[i]);
 }
 
-entityClass *findClinch(const vec3 &pos, real maxDist)
+entity *findClinch(const vec3 &pos, real maxDist)
 {
-	spatialQuery->intersection(sphere(pos, maxDist));
-	if (!spatialQuery->resultCount())
+	spatialSearchQuery->intersection(sphere(pos, maxDist));
+	if (!spatialSearchQuery->resultCount())
 		return nullptr;
-	std::vector<uint32> vec(spatialQuery->result().begin(), spatialQuery->result().end());
+	std::vector<uint32> vec(spatialSearchQuery->result().begin(), spatialSearchQuery->result().end());
 	uint32 n = *std::min_element(vec.begin(), vec.end(), [pos](uint32 a, uint32 b) {
-		ENGINE_GET_COMPONENT(transform, ta, entities()->get(a));
-		ENGINE_GET_COMPONENT(transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
+		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
 		real da = distance(ta.position, pos);
 		real db = distance(tb.position, pos);
 		return da < db;

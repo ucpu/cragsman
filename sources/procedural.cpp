@@ -3,7 +3,7 @@
 
 #include <cage-core/log.h>
 #include <cage-core/geometry.h>
-#include <cage-core/noise.h>
+#include <cage-core/noiseFunction.h>
 #include <cage-core/color.h>
 #include <cage-core/random.h>
 
@@ -11,42 +11,42 @@ namespace
 {
 	const uint32 globalSeed = (uint32)currentRandomGenerator().next();
 
-	holder<noiseClass> newClouds(uint32 seed, uint32 octaves = 3)
+	holder<noiseFunction> newClouds(uint32 seed, uint32 octaves = 3)
 	{
-		noiseCreateConfig cfg;
+		noiseFunctionCreateConfig cfg;
 		cfg.seed = seed;
 		cfg.octaves = octaves;
 		cfg.type = noiseTypeEnum::Value;
-		return newNoise(cfg);
+		return newNoiseFunction(cfg);
 	}
 
-	holder<noiseClass> newValue(uint32 seed)
+	holder<noiseFunction> newValue(uint32 seed)
 	{
 		return newClouds(seed + 745, 0);
 	}
 
-	holder<noiseClass> newCell(uint32 seed, noiseOperationEnum operation = noiseOperationEnum::Distance, noiseDistanceEnum distance = noiseDistanceEnum::Euclidean, uint32 index0 = 0, uint32 index1 = 1)
+	holder<noiseFunction> newCell(uint32 seed, noiseOperationEnum operation = noiseOperationEnum::Distance, noiseDistanceEnum distance = noiseDistanceEnum::Euclidean, uint32 index0 = 0, uint32 index1 = 1)
 	{
-		noiseCreateConfig cfg;
+		noiseFunctionCreateConfig cfg;
 		cfg.seed = seed;
 		cfg.type = noiseTypeEnum::Cellular;
 		cfg.operation = operation;
 		cfg.distance = distance;
 		cfg.index0 = index0;
 		cfg.index1 = index1;
-		return newNoise(cfg);
+		return newNoiseFunction(cfg);
 	}
 
 	template<class T>
-	real evaluateCell(holder<noiseClass> &noise, const T &position)
+	real evaluateCell(holder<noiseFunction> &noiseFunction, const T &position)
 	{
-		return noise->evaluate(position);
+		return noiseFunction->evaluate(position);
 	}
 
 	template<class T>
-	real evaluateClamp(holder<noiseClass> &noise, const T &position)
+	real evaluateClamp(holder<noiseFunction> &noiseFunction, const T &position)
 	{
-		return noise->evaluate(position) * 0.5 + 0.5;
+		return noiseFunction->evaluate(position) * 0.5 + 0.5;
 	}
 
 	real rerange(real v, real ia, real ib, real oa, real ob)
@@ -77,45 +77,45 @@ real terrainOffset(const vec2 &pos)
 	}
 
 	{ // horizontal slabs
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 4);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 5);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 4);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 5);
 		real off = evaluateClamp(clouds1, pos * 0.0065);
 		real mask = evaluateClamp(clouds2, pos * 0.00715);
 		result += slab(pos[1] * 0.027 + off * 2.5) * sharpEdge(mask * 2 - 0.7) * 5;
 	}
 
 	{ // extra saliences
-		static holder<noiseClass> cell1 = newCell(globalSeed + 7);
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 8);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 7);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 8);
 		real a = evaluateCell(cell1, pos * 0.0241);
 		real b = evaluateCell(clouds1, pos * 0.041);
 		result += sharpEdge(a + b - 0.4);
 	}
 
 	{ // medium-frequency waves
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 10);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 11);
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 12);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 10);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 11);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 12);
 		real scl = evaluateClamp(clouds1, pos * 0.00921);
 		real rot = evaluateClamp(clouds2, pos * 0.00398);
 		vec2 off = vec2(rot + 0.5, 1.5 - rot);
 		real mask = evaluateClamp(clouds3, pos * 0.00654);
-		static holder<noiseClass> cell1 = newCell(globalSeed + 15, noiseOperationEnum::Subtract);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 15, noiseOperationEnum::Subtract);
 		real a = evaluateCell(cell1, (pos * 0.01 + off) * (scl + 0.5));
 		result += pow((min(a + 0.95, 1) - 0.95) * 20, 3) * sharpEdge(mask - 0.1) * 0.5;
 	}
 
 	{ // high-frequency x-aligned cracks
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 15);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 16);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 15);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 16);
 		real a = pow(evaluateClamp(clouds1, pos * vec2(0.036, 0.13)), 0.2);
 		real b = pow(evaluateClamp(clouds2, pos * vec2(0.047, 0.029)), 0.1);
 		result += min(a, b) * 3;
 	}
 
 	{ // medium-frequency y-aligned cracks
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 17);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 18);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 17);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 18);
 		real a = pow(evaluateClamp(clouds1, pos * vec2(0.11, 0.027) * 0.5), 0.2);
 		real b = pow(evaluateClamp(clouds2, pos * vec2(0.033, 0.051) * 0.5), 0.1);
 		result += min(a, b) * 3;
@@ -144,9 +144,9 @@ namespace
 
 	vec3 recolor(const vec3 &color, real deviation, const vec2 &pos)
 	{
-		static holder<noiseClass> value1 = newValue(globalSeed + 123);
-		static holder<noiseClass> value2 = newValue(globalSeed + 124);
-		static holder<noiseClass> value3 = newValue(globalSeed + 125);
+		static holder<noiseFunction> value1 = newValue(globalSeed + 123);
+		static holder<noiseFunction> value2 = newValue(globalSeed + 124);
+		static holder<noiseFunction> value3 = newValue(globalSeed + 125);
 		real h = evaluateClamp(value1, pos) * 0.5 + 0.25;
 		real s = evaluateClamp(value2, pos);
 		real v = evaluateClamp(value3, pos);
@@ -157,9 +157,9 @@ namespace
 
 	void darkRockGeneral(const vec2 &pos, vec3 &color, real &roughness, real &metallic, const vec3 *colors, uint32 colorsCount)
 	{
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 103);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 112);
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 121);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 103);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 112);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 121);
 		vec2 off = vec2(evaluateClamp(clouds1, pos * 0.065), evaluateClamp(clouds2, pos * 0.1));
 		real f = evaluateClamp(clouds3, pos * 0.0756 + off);
 
@@ -167,25 +167,25 @@ namespace
 		{
 		case 3: color = ninterpolate<3>(colors, f); break;
 		case 4: color = ninterpolate<4>(colors, f); break;
-		default: CAGE_THROW_CRITICAL(notImplementedException, "unsupported colorsCount");
+		default: CAGE_THROW_CRITICAL(notImplemented, "unsupported colorsCount");
 		}
 
 		color = recolor(color, 0.1, pos * 2.1);
 
-		static holder<noiseClass> clouds4 = newClouds(globalSeed + 148);
+		static holder<noiseFunction> clouds4 = newClouds(globalSeed + 148);
 		roughness = evaluateClamp(clouds4, pos * 1.132) * 0.4 + 0.3;
 		metallic = 0.02;
 	}
 
 	void basePaper(const vec2 &pos, vec3 &color, real &roughness, real &metallic)
 	{
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 143, 5);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 142, 5);
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 141, 5);
-		static holder<noiseClass> clouds4 = newClouds(globalSeed + 140);
-		static holder<noiseClass> clouds5 = newClouds(globalSeed + 139);
-		static holder<noiseClass> cell1 = newCell(globalSeed + 151, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
-		static holder<noiseClass> cell2 = newCell(globalSeed + 152, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 143, 5);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 142, 5);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 141, 5);
+		static holder<noiseFunction> clouds4 = newClouds(globalSeed + 140);
+		static holder<noiseFunction> clouds5 = newClouds(globalSeed + 139);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 151, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
+		static holder<noiseFunction> cell2 = newCell(globalSeed + 152, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
 		vec2 off = vec2(evaluateCell(cell1, pos * 0.063), evaluateCell(cell2, pos * 0.063));
 		if (evaluateClamp(clouds4, pos * 0.097 + off * 2.2) < 0.6)
 		{ // rock 1
@@ -220,7 +220,7 @@ namespace
 			pdnToRgb(21, 69, 55)
 		};
 
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 153, 4);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 153, 4);
 		real off = evaluateClamp(clouds1, pos * 0.0041);
 		real y = (pos[1] * 0.012 + 1000) % 4;
 		real c = (y + off * 2 - 1 + 4) % 4;
@@ -233,7 +233,7 @@ namespace
 
 		color = recolor(color, 0.1, pos * 1.1);
 
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 154);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 154);
 		roughness = evaluateClamp(clouds2, pos * 0.941) * 0.3 + 0.4;
 		metallic = 0.02;
 	}
@@ -248,9 +248,9 @@ namespace
 			pdnToRgb(217, 9, 74)
 		};
 
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 253);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 254);
-		static holder<noiseClass> value1 = newValue(globalSeed + 255);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 253);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 254);
+		static holder<noiseFunction> value1 = newValue(globalSeed + 255);
 		vec2 off = vec2(evaluateClamp(clouds1, pos * 0.1), evaluateClamp(clouds2, pos * 0.1));
 		real n = evaluateClamp(value1, pos * 0.1 + off);
 		color = ninterpolate<3>(colors, n);
@@ -258,7 +258,7 @@ namespace
 		color = recolor(color, 0.2, pos * 0.72);
 		color = recolor(color, 0.13, pos * 1.3);
 
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 256);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 256);
 		roughness = pow(evaluateClamp(clouds3, pos * 1.441), 0.5) * 0.7 + 0.01;
 		metallic = 0.05;
 	}
@@ -267,11 +267,11 @@ namespace
 	{
 		// https://www.goodfreephotos.com/united-states/colorado/other-colorado/rock-cliff-in-the-fog-in-colorado.jpg.php
 
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 323);
-		static holder<noiseClass> clouds2 = newClouds(globalSeed + 324);
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 325);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 323);
+		static holder<noiseFunction> clouds2 = newClouds(globalSeed + 324);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 325);
 		vec2 off = vec2(evaluateClamp(clouds1, pos * 0.043), evaluateClamp(clouds2, pos * 0.043));
-		static holder<noiseClass> cell1 = newCell(globalSeed + 326, noiseOperationEnum::Subtract);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 326, noiseOperationEnum::Subtract);
 		real f = evaluateCell(cell1, pos * 0.0147 + off * 0.23);
 		real m = evaluateClamp(clouds3, pos * 0.018);
 		if (f < 0.017 && m < 0.35)
@@ -281,9 +281,9 @@ namespace
 				pdnToRgb(21, 22, 49)
 			};
 
-			static holder<noiseClass> value1 = newValue(globalSeed + 741);
+			static holder<noiseFunction> value1 = newValue(globalSeed + 741);
 			color = interpolate(vein[0], vein[1], evaluateClamp(value1, pos));
-			static holder<noiseClass> clouds2 = newClouds(globalSeed + 154);
+			static holder<noiseFunction> clouds2 = newClouds(globalSeed + 154);
 			roughness = evaluateClamp(clouds2, pos * 0.718) * 0.3 + 0.3;
 			metallic = 0.6;
 		}
@@ -323,13 +323,13 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 	case 2: baseWhite(pos, color, roughness, metallic); break;
 	case 3: baseDarkRock1(pos, color, roughness, metallic); break;
 	case 4: baseDarkRock2(pos, color, roughness, metallic); break;
-	default: CAGE_THROW_CRITICAL(notImplementedException, "unknown terrain base color enum");
+	default: CAGE_THROW_CRITICAL(notImplemented, "unknown terrain base color enum");
 	}
 
 	{ // small cracks
-		static holder<noiseClass> cell1 = newCell(globalSeed + 6974, noiseOperationEnum::Subtract);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 6974, noiseOperationEnum::Subtract);
 		real f = evaluateCell(cell1, pos * 0.187);
-		static holder<noiseClass> clouds1 = newClouds(globalSeed + 555);
+		static holder<noiseFunction> clouds1 = newClouds(globalSeed + 555);
 		real m = evaluateClamp(clouds1, pos * 0.43);
 		if (f < 0.02 && m < 0.5)
 		{
@@ -339,10 +339,10 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 	}
 
 	{ // white glistering spots
-		static holder<noiseClass> cell1 = newCell(globalSeed + 6975);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 6975);
 		if (evaluateCell(cell1, pos * 0.084) > 0.95)
 		{
-			static holder<noiseClass> clouds2 = newClouds(globalSeed + 554, 2);
+			static holder<noiseFunction> clouds2 = newClouds(globalSeed + 554, 2);
 			real c = evaluateClamp(clouds2, pos * 3) * 0.2 + 0.8;
 			color = vec3(c);
 			roughness = 0.2;
@@ -354,12 +354,12 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 		return;
 
 	{ // large cracks
-		static holder<noiseClass> cell1 = newCell(globalSeed + 6976, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
-		static holder<noiseClass> cell2 = newCell(globalSeed + 6977, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
-		static holder<noiseClass> cell3 = newCell(globalSeed + 6978, noiseOperationEnum::Subtract);
+		static holder<noiseFunction> cell1 = newCell(globalSeed + 6976, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
+		static holder<noiseFunction> cell2 = newCell(globalSeed + 6977, noiseOperationEnum::Distance, noiseDistanceEnum::Euclidean, 1);
+		static holder<noiseFunction> cell3 = newCell(globalSeed + 6978, noiseOperationEnum::Subtract);
 		vec2 off = vec2(evaluateCell(cell1, pos * 0.1), evaluateCell(cell2, pos * 0.1));
 		real f = evaluateCell(cell3, pos * 0.034 + off * 0.23);
-		static holder<noiseClass> clouds3 = newClouds(globalSeed + 556);
+		static holder<noiseFunction> clouds3 = newClouds(globalSeed + 556);
 		real m = evaluateClamp(clouds3, pos * 0.023);
 		if (f < 0.015 && m < 0.4)
 		{
@@ -373,22 +373,22 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 	real vn = (terrainOffset(pos + vec2(0, -0.1)) - terrainOffset(pos)) / 0.1;
 
 	{ // large grass (on up facing surfaces)
-		static holder<noiseClass> clouds4 = newClouds(globalSeed + 557);
+		static holder<noiseFunction> clouds4 = newClouds(globalSeed + 557);
 		real thr = evaluateClamp(clouds4, pos * 0.015);
 		if (vn > thr + 0.2)
 		{
-			static holder<noiseClass> clouds5 = newClouds(globalSeed + 558);
+			static holder<noiseFunction> clouds5 = newClouds(globalSeed + 558);
 			real mask = evaluateClamp(clouds5, pos * 2.423);
 			real m = sharpEdge(mask);
-			static holder<noiseClass> value1 = newValue(globalSeed + 823);
-			static holder<noiseClass> value2 = newValue(globalSeed + 824);
-			static holder<noiseClass> value3 = newValue(globalSeed + 825);
+			static holder<noiseFunction> value1 = newValue(globalSeed + 823);
+			static holder<noiseFunction> value2 = newValue(globalSeed + 824);
+			static holder<noiseFunction> value3 = newValue(globalSeed + 825);
 			vec3 grass = convertHsvToRgb(vec3(
 				evaluateClamp(value1, pos) * 0.3 + 0.13,
 				evaluateClamp(value2, pos) * 0.2 + 0.5,
 				evaluateClamp(value3, pos) * 0.2 + 0.5
 			));
-			static holder<noiseClass> clouds6 = newClouds(globalSeed + 558);
+			static holder<noiseFunction> clouds6 = newClouds(globalSeed + 558);
 			real r = evaluateClamp(clouds6, pos * 1.23) * 0.4 + 0.2;
 			color = interpolate(color, grass, m);
 			roughness = interpolate(roughness, r, m);
