@@ -83,7 +83,7 @@ namespace
 		//holder<image> cpuNormal;
 		holder<renderObject> gpuObject;
 		tilePosStruct pos;
-		entity *entity;
+		entity *entity_;
 		std::atomic<tileStatusEnum> status;
 		uint32 meshName;
 		uint32 albedoName;
@@ -118,8 +118,8 @@ namespace
 			{
 				removeTerrainCollider(t.objectName);
 				t.cpuCollider.clear();
-				t.entity->destroy();
-				t.entity = nullptr;
+				t.entity_->destroy();
+				t.entity_ = nullptr;
 				t.status = tileStatusEnum::Defabricate;
 			}
 			// create entity
@@ -141,10 +141,10 @@ namespace
 					t.gpuObject->setLods(1, 1, thresholds, meshIndices, meshNames);
 				}
 				{ // create the entity
-					t.entity = entities()->createAnonymous();
-					CAGE_COMPONENT_ENGINE(transform, tr, t.entity);
+					t.entity_ = entities()->createAnonymous();
+					CAGE_COMPONENT_ENGINE(transform, tr, t.entity_);
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
-					CAGE_COMPONENT_ENGINE(render, r, t.entity);
+					CAGE_COMPONENT_ENGINE(render, r, t.entity_);
 					r.object = t.objectName;
 				}
 				t.status = tileStatusEnum::Ready;
@@ -469,7 +469,7 @@ namespace
 			engineFinalizeListener.bind<&engineFinalize>();
 			engineDispatchListener.attach(graphicsDispatchThread().render);
 			engineDispatchListener.bind<&engineDispatch>();
-			
+
 			uint32 cpuCount = max(processorsCount(), 2u) - 1;
 			for (uint32 i = 0; i < cpuCount; i++)
 				generatorThreads.push_back(newThread(delegate<void()>().bind<&generatorEntry>(), string() + "generator " + i));
