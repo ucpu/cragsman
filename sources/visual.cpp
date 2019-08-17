@@ -75,7 +75,7 @@ namespace
 		{ // spring visuals
 			for (entity *e : springVisualComponent::component->entities())
 			{
-				CAGE_ASSERT_RUNTIME(e->has(springComponent::component));
+				CAGE_ASSERT(e->has(springComponent::component));
 				GAME_GET_COMPONENT(spring, s, e);
 				GAME_GET_COMPONENT(springVisual, v, e);
 				entity *e0 = entities()->get(s.objects[0]);
@@ -88,12 +88,12 @@ namespace
 #ifdef CAGE_DEBUG
 				uint32 cnt = 3;
 #else
-				uint32 cnt = numeric_cast<uint32>(t0.position.distance(t1.position) * 1.5) + 3;
+				uint32 cnt = numeric_cast<uint32>(distance(t0.position, t1.position) * 1.5) + 3;
 				cnt = min(cnt, 20u);
 #endif // CAGE_DEBUG
 				for (uint32 i = 1; i < cnt - 1; i++)
 				{
-					real deviation = sin(rads::Stright() * real(i) / cnt);
+					real deviation = sin(rads::Full() * 0.5 * real(i) / cnt);
 					real portion = (randomChance() + i) / cnt;
 					vec3 color = colorDeviation(v.color, 0.1);
 					entity *pe = newParticle(

@@ -380,7 +380,7 @@ namespace
 				v.position = vec3(pt, terrainOffset(pw));
 				real tox = terrainOffset(pw + pwox) - v.position[2];
 				real toy = terrainOffset(pw + pwoy) - v.position[2];
-				v.normal = vec3(-tox, -toy, 0.1).normalize();
+				v.normal = normalize(vec3(-tox, -toy, 0.1));
 				t.cpuMesh.push_back(v);
 			}
 		}

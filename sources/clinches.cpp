@@ -44,7 +44,7 @@ namespace
 
 	void generateClinches(tileStruct &t)
 	{
-		CAGE_ASSERT_RUNTIME(t.clinches.empty());
+		CAGE_ASSERT(t.clinches.empty());
 		randomGenerator rg(detail::hash(t.pos.x), detail::hash(t.pos.y));
 		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)

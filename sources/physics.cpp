@@ -52,7 +52,7 @@ namespace
 			if (e->has(physicsComponent::component))
 			{
 				GAME_GET_COMPONENT(physics, p, e);
-				CAGE_ASSERT_RUNTIME(p.mass > 1e-7, p.mass);
+				CAGE_ASSERT(p.mass > 1e-7, p.mass);
 				return p.mass;
 			}
 			return real::Infinity();
@@ -70,7 +70,7 @@ namespace
 
 		void addForce(entity *e, const vec3 &f)
 		{
-			CAGE_ASSERT_RUNTIME(f.valid(), f);
+			CAGE_ASSERT(f.valid(), f);
 			acceleration[e] += f / entMass(e);
 		}
 
@@ -80,21 +80,21 @@ namespace
 			for (entity *e : springComponent::component->entities())
 			{
 				GAME_GET_COMPONENT(spring, s, e);
-				CAGE_ASSERT_RUNTIME(s.restDistance >= 0, s.restDistance);
-				CAGE_ASSERT_RUNTIME(s.stiffness > 0 && s.stiffness < 1, s.stiffness);
-				CAGE_ASSERT_RUNTIME(s.damping > 0 && s.damping < 1, s.damping);
+				CAGE_ASSERT(s.restDistance >= 0, s.restDistance);
+				CAGE_ASSERT(s.stiffness > 0 && s.stiffness < 1, s.stiffness);
+				CAGE_ASSERT(s.damping > 0 && s.damping < 1, s.damping);
 				entity *e1 = entities()->get(s.objects[0]);
 				entity *e2 = entities()->get(s.objects[1]);
 				vec3 p1 = entPos(e1);
 				vec3 p2 = entPos(e2);
 				real m1 = entMass(e1);
 				real m2 = entMass(e2);
-				CAGE_ASSERT_RUNTIME(m1.finite() || m2.finite());
+				CAGE_ASSERT(m1.finite() || m2.finite());
 				real m = (m1.finite() && m2.finite()) ? (m1 * m2) / (m1 + m2) : m1.finite() ? m1 : m2;
-				CAGE_ASSERT_RUNTIME(m.valid() && m.finite());
+				CAGE_ASSERT(m.valid() && m.finite());
 				vec3 x = p2 - p1;
-				if (x.squaredLength() > 1e-5)
-					x -= x.normalize() * s.restDistance;
+				if (squaredLength(x) > 1e-5)
+					x -= normalize(x) * s.restDistance;
 				else
 					x -= randomDirection3() * s.restDistance;
 				vec3 v = entVel(e2) - entVel(e1);
@@ -121,7 +121,7 @@ namespace
 
 			vec3 tp = closestPoint(tr, t.position);
 			real penetration = -(distance(t.position, tp) - p.collisionRadius);
-			CAGE_ASSERT_RUNTIME(penetration > 0);
+			CAGE_ASSERT(penetration > 0);
 			penetration = min(penetration, 1);
 			vec3 dir = normalize(t.position - tp);
 			vec3 depenetration = dir * (pow(penetration + 1, 3) - 1);
@@ -143,7 +143,7 @@ namespace
 					const collisionMesh *c = nullptr;
 					transform dummy;
 					collisionSearchQuery->collider(c, dummy);
-					CAGE_ASSERT_RUNTIME(dummy == transform());
+					CAGE_ASSERT(dummy == transform());
 					for (auto cp : collisionSearchQuery->collisionPairs())
 					{
 						const triangle &tr = c->triangleData(cp.b);
@@ -164,11 +164,11 @@ namespace
 		{
 			for (entity *e : physicsComponent::component->entities())
 			{
-				CAGE_ASSERT_RUNTIME(acceleration[e].valid(), acceleration[e]);
+				CAGE_ASSERT(acceleration[e].valid(), acceleration[e]);
 				GAME_GET_COMPONENT(physics, p, e);
-				CAGE_ASSERT_RUNTIME(p.velocity.valid(), p.velocity);
+				CAGE_ASSERT(p.velocity.valid(), p.velocity);
 				CAGE_COMPONENT_ENGINE(transform, t, e);
-				CAGE_ASSERT_RUNTIME(t.position.valid(), t.position);
+				CAGE_ASSERT(t.position.valid(), t.position);
 				p.velocity *= 0.995; // damping
 				p.velocity += acceleration[e] * deltaTime;
 				t.position += p.velocity * deltaTime;
@@ -244,14 +244,14 @@ void removeTerrainCollider(uint32 name)
 
 vec3 terrainIntersection(const line &ln)
 {
-	CAGE_ASSERT_RUNTIME(ln.normalized());
+	CAGE_ASSERT(ln.normalized());
 	collisionSearchQuery->query(ln);
 	if (!collisionSearchQuery->name())
 	{
 		// use old, less accurate method
 		real dst = ln.a()[2] / dot(ln.direction, vec3(0, 0, -1));
 		vec3 base = ln.a() + ln.direction * dst;
-		CAGE_ASSERT_RUNTIME(abs(base[2]) < 1e-5, base);
+		CAGE_ASSERT(abs(base[2]) < 1e-5, base);
 		return vec3(vec2(base), terrainOffset(vec2(base)));
 	}
 	const collisionMesh *c = nullptr;

@@ -63,7 +63,7 @@ namespace
 	{
 		v = v % 1;
 		if (v > 0.8)
-			return sin(rads::Stright() * (v - 0.8) / 0.2 + rads::Right());
+			return sin(rads::Full() * 0.5 * (v - 0.8) / 0.2 + rads::Full() * 0.25);
 		return v / 0.8;
 	}
 }
@@ -121,7 +121,7 @@ real terrainOffset(const vec2 &pos)
 		result += min(a, b) * 3;
 	}
 
-	CAGE_ASSERT_RUNTIME(result.valid());
+	CAGE_ASSERT(result.valid());
 	return result;
 }
 
@@ -135,10 +135,10 @@ namespace
 	template<uint32 N, class T>
 	T ninterpolate(const T v[N], real f) // f is 0..1
 	{
-		CAGE_ASSERT_RUNTIME(f >= 0 && f < 1, f, N);
+		CAGE_ASSERT(f >= 0 && f < 1, f, N);
 		f *= (N - 1); // 0..(N-1)
 		uint32 i = numeric_cast<uint32>(f);
-		CAGE_ASSERT_RUNTIME(i + 1 < N, f, i, N);
+		CAGE_ASSERT(i + 1 < N, f, i, N);
 		return interpolate(v[i], v[i + 1], f - i);
 	}
 
