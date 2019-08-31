@@ -93,7 +93,7 @@ namespace
 				real m = (m1.finite() && m2.finite()) ? (m1 * m2) / (m1 + m2) : m1.finite() ? m1 : m2;
 				CAGE_ASSERT(m.valid() && m.finite());
 				vec3 x = p2 - p1;
-				if (squaredLength(x) > 1e-5)
+				if (lengthSquared(x) > 1e-5)
 					x -= normalize(x) * s.restDistance;
 				else
 					x -= randomDirection3() * s.restDistance;

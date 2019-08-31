@@ -8,6 +8,7 @@
 #include <cage-core/geometry.h>
 #include <cage-core/hashString.h>
 #include <cage-core/variableSmoothingBuffer.h>
+#include <cage-core/camera.h>
 
 #include <cage-client/core.h>
 #include <cage-client/engine.h>
