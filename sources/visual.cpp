@@ -41,9 +41,9 @@ entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &colo
 
 vec3 colorDeviation(const vec3 &color, real deviation)
 {
-	vec3 hsv = convertRgbToHsv(color) + (vec3(randomChance(), randomChance(), randomChance()) - 0.5) * deviation;
+	vec3 hsv = colorRgbToHsv(color) + (vec3(randomChance(), randomChance(), randomChance()) - 0.5) * deviation;
 	hsv[0] = (hsv[0] + 1) % 1;
-	return convertHsvToRgb(clamp(hsv, vec3(), vec3(1)));
+	return colorHsvToRgb(clamp(hsv, vec3(), vec3(1)));
 }
 
 namespace

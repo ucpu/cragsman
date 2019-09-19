@@ -2,8 +2,8 @@
 [base]
 mask = 1
 roughness = 0.5
-metalness = 0.1
-emissive = 1
+metallic = 0.1
+emission = 1
 
 [flags]
-no-lighting
+noLighting

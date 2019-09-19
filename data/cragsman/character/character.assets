@@ -5,8 +5,7 @@ character.pack
 
 []
 scheme = mesh
-export_uv = false
-export_tangent = false
+uvs = false
 body.blend
 shoulder.blend
 elbow.blend

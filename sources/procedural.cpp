@@ -129,7 +129,7 @@ namespace
 {
 	vec3 pdnToRgb(real h, real s, real v)
 	{
-		return convertHsvToRgb(vec3(h / 360, s / 100, v / 100));
+		return colorHsvToRgb(vec3(h / 360, s / 100, v / 100));
 	}
 
 	template<uint32 N, class T>
@@ -150,9 +150,9 @@ namespace
 		real h = evaluateClamp(value1, pos) * 0.5 + 0.25;
 		real s = evaluateClamp(value2, pos);
 		real v = evaluateClamp(value3, pos);
-		vec3 hsv = convertRgbToHsv(color) + (vec3(h, s, v) - 0.5) * deviation;
+		vec3 hsv = colorRgbToHsv(color) + (vec3(h, s, v) - 0.5) * deviation;
 		hsv[0] = (hsv[0] + 1) % 1;
-		return convertHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
+		return colorHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
 	}
 
 	void darkRockGeneral(const vec2 &pos, vec3 &color, real &roughness, real &metallic, const vec3 *colors, uint32 colorsCount)
@@ -189,7 +189,7 @@ namespace
 		vec2 off = vec2(evaluateCell(cell1, pos * 0.063), evaluateCell(cell2, pos * 0.063));
 		if (evaluateClamp(clouds4, pos * 0.097 + off * 2.2) < 0.6)
 		{ // rock 1
-			color = convertHsvToRgb(vec3(
+			color = colorHsvToRgb(vec3(
 				evaluateClamp(clouds1, pos * 0.134) * 0.01 + 0.08,
 				evaluateClamp(clouds2, pos * 0.344) * 0.2 + 0.2,
 				evaluateClamp(clouds3, pos * 0.100) * 0.4 + 0.55
@@ -199,7 +199,7 @@ namespace
 		}
 		else
 		{ // rock 2
-			color = convertHsvToRgb(vec3(
+			color = colorHsvToRgb(vec3(
 				evaluateClamp(clouds1, pos * 0.321) * 0.02 + 0.094,
 				evaluateClamp(clouds2, pos * 0.258) * 0.3 + 0.08,
 				evaluateClamp(clouds3, pos * 0.369) * 0.2 + 0.59
@@ -383,7 +383,7 @@ void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metall
 			static holder<noiseFunction> value1 = newValue(globalSeed + 823);
 			static holder<noiseFunction> value2 = newValue(globalSeed + 824);
 			static holder<noiseFunction> value3 = newValue(globalSeed + 825);
-			vec3 grass = convertHsvToRgb(vec3(
+			vec3 grass = colorHsvToRgb(vec3(
 				evaluateClamp(value1, pos) * 0.3 + 0.13,
 				evaluateClamp(value2, pos) * 0.2 + 0.5,
 				evaluateClamp(value3, pos) * 0.2 + 0.5

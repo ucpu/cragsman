@@ -5,8 +5,8 @@ clinch.pack
 
 []
 scheme = mesh
-export_uv = false
-export_tangent = false
+uvs = false
+
 clinch.blend
 
 []
