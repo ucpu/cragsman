@@ -10,8 +10,8 @@
 #include <cage-core/collision.h>
 #include <cage-core/collisionMesh.h>
 
-#include <cage-client/core.h>
-#include <cage-client/engine.h>
+#include <cage-engine/core.h>
+#include <cage-engine/engine.h>
 
 entityComponent *physicsComponent::component;
 entityComponent *springComponent::component;
@@ -146,7 +146,7 @@ namespace
 					CAGE_ASSERT(dummy == transform());
 					for (auto cp : collisionSearchQuery->collisionPairs())
 					{
-						const triangle &tr = c->triangleData(cp.b);
+						const triangle &tr = c->triangles()[cp.b];
 						addForce(e, collisionResponse(t, p, tr));
 					}
 				}
@@ -257,6 +257,6 @@ vec3 terrainIntersection(const line &ln)
 	const collisionMesh *c = nullptr;
 	transform dummy;
 	collisionSearchQuery->collider(c, dummy);
-	const triangle &t = c->triangleData(collisionSearchQuery->collisionPairsData()->b);
+	const triangle &t = c->triangles()[collisionSearchQuery->collisionPairs()[0].b];
 	return intersection(ln, t);
 }

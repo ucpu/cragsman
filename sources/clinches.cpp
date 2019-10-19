@@ -12,16 +12,8 @@
 #include <cage-core/hashString.h>
 #include <cage-core/random.h>
 
-#include <cage-client/core.h>
-#include <cage-client/engine.h>
-
-namespace cage
-{
-	namespace detail
-	{
-		CAGE_API uint32 hash(uint32);
-	}
-}
+#include <cage-engine/core.h>
+#include <cage-engine/engine.h>
 
 namespace
 {
@@ -45,7 +37,7 @@ namespace
 	void generateClinches(tileStruct &t)
 	{
 		CAGE_ASSERT(t.clinches.empty());
-		randomGenerator rg(detail::hash(t.pos.x), detail::hash(t.pos.y));
+		randomGenerator rg(hash(t.pos.x), hash(t.pos.y));
 		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
@@ -125,13 +117,13 @@ namespace
 void findInitialClinches(uint32 &count, entity **result)
 {
 	spatialSearchQuery->intersection(aabb::Universe());
-	if (spatialSearchQuery->resultCount() < count)
+	auto res = spatialSearchQuery->result();
+	if (res.size() < count)
 	{
 		count = 0;
 		return;
 	}
-	std::vector<uint32> vec(spatialSearchQuery->result().begin(), spatialSearchQuery->result().end());
-	std::sort(vec.begin(), vec.end(), [](uint32 a, uint32 b) {
+	std::sort(res.begin(), res.end(), [](uint32 a, uint32 b) {
 		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
 		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
 		real da = distance(ta.position, vec3());
@@ -139,16 +131,16 @@ void findInitialClinches(uint32 &count, entity **result)
 		return da < db;
 	});
 	for (uint32 i = 0; i < count; i++)
-		result[i] = entities()->get(vec[i]);
+		result[i] = entities()->get(res[i]);
 }
 
 entity *findClinch(const vec3 &pos, real maxDist)
 {
 	spatialSearchQuery->intersection(sphere(pos, maxDist));
-	if (!spatialSearchQuery->resultCount())
+	auto res = spatialSearchQuery->result();
+	if (!res.size())
 		return nullptr;
-	std::vector<uint32> vec(spatialSearchQuery->result().begin(), spatialSearchQuery->result().end());
-	uint32 n = *std::min_element(vec.begin(), vec.end(), [pos](uint32 a, uint32 b) {
+	uint32 n = *std::min_element(res.begin(), res.end(), [pos](uint32 a, uint32 b) {
 		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
 		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
 		real da = distance(ta.position, pos);

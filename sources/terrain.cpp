@@ -15,12 +15,12 @@
 #include <cage-core/image.h>
 #include <cage-core/collisionMesh.h>
 
-#include <cage-client/core.h>
-#include <cage-client/engine.h>
-#include <cage-client/graphics.h>
-#include <cage-client/opengl.h>
-#include <cage-client/assetStructs.h>
-#include <cage-client/graphics/shaderConventions.h>
+#include <cage-engine/core.h>
+#include <cage-engine/engine.h>
+#include <cage-engine/graphics.h>
+#include <cage-engine/opengl.h>
+#include <cage-engine/assetStructs.h>
+#include <cage-engine/graphics/shaderConventions.h>
 
 std::set<tilePosStruct> findNeededTiles(real tileLength, real range)
 {

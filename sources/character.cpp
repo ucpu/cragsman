@@ -10,10 +10,10 @@
 #include <cage-core/variableSmoothingBuffer.h>
 #include <cage-core/camera.h>
 
-#include <cage-client/core.h>
-#include <cage-client/engine.h>
-#include <cage-client/window.h>
-#include <cage-client/gui.h>
+#include <cage-engine/core.h>
+#include <cage-engine/engine.h>
+#include <cage-engine/window.h>
+#include <cage-engine/gui.h>
 
 uint32 cameraName;
 uint32 characterBody;

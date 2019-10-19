@@ -5,9 +5,9 @@
 #include <cage-core/entities.h>
 #include <cage-core/hashString.h>
 
-#include <cage-client/core.h>
-#include <cage-client/engine.h>
-#include <cage-client/gui.h>
+#include <cage-engine/core.h>
+#include <cage-engine/engine.h>
+#include <cage-engine/gui.h>
 
 namespace
 {
