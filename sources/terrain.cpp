@@ -6,7 +6,6 @@
 #include "common.h"
 #include "baseTile.h"
 
-#include <cage-core/log.h>
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
 #include <cage-core/concurrent.h>
@@ -206,7 +205,6 @@ namespace
 				assets()->set<assetSchemeIndexMesh, renderMesh>(t.meshName, t.gpuMesh.get());
 				assets()->set<assetSchemeIndexRenderObject, renderObject>(t.objectName, t.gpuObject.get());
 				t.status = tileStatusEnum::Entity;
-				break;
 			}
 			else if (t.status == tileStatusEnum::Defabricate)
 			{
@@ -221,7 +219,6 @@ namespace
 				t.meshName = 0;
 				t.objectName = 0;
 				t.status = tileStatusEnum::Unload1;
-				break;
 			}
 		}
 		return false;

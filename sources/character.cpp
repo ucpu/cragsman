@@ -3,7 +3,6 @@
 
 #include "common.h"
 
-#include <cage-core/log.h>
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
 #include <cage-core/hashString.h>

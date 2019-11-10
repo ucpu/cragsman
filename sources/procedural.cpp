@@ -1,7 +1,6 @@
 
 #include "common.h"
 
-#include <cage-core/log.h>
 #include <cage-core/geometry.h>
 #include <cage-core/noiseFunction.h>
 #include <cage-core/color.h>

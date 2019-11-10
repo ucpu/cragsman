@@ -1,7 +1,7 @@
 #include <exception>
 
 #include <cage-core/core.h>
-#include <cage-core/log.h>
+#include <cage-core/logger.h>
 #include <cage-core/math.h>
 #include <cage-core/config.h>
 #include <cage-core/assetManager.h>
@@ -13,6 +13,7 @@
 #include <cage-engine/engine.h>
 #include <cage-engine/engineProfiling.h>
 #include <cage-engine/highPerformanceGpuHint.h>
+#include <cage-engine/fullscreenSwitcher.h>
 
 using namespace cage;
 
@@ -29,6 +30,7 @@ int main(int argc, const char *args[])
 {
 	try
 	{
+		configSetBool("cage.config.autoSave", true);
 		holder<logger> log1 = newLogger();
 		log1->format.bind<logFormatConsole>();
 		log1->output.bind<logOutputStdOut>();
@@ -40,14 +42,12 @@ int main(int argc, const char *args[])
 		eventListener<bool()> windowCloseListener;
 		windowCloseListener.bind<&windowClose>();
 		window()->events.windowClose.attach(windowCloseListener);
-
 		window()->title("Cragsman");
-		window()->setMaximized();
 
 		{
+			holder<fullscreenSwitcher> fullscreen = newFullscreenSwitcher({});
 			holder<engineProfiling> engineProfiling = newEngineProfiling();
 			engineProfiling->profilingScope = engineProfilingScopeEnum::None;
-			engineProfiling->keyToggleFullscreen = 0;
 			engineProfiling->screenPosition = vec2(0.5, 0.5);
 
 			engineStart();
@@ -55,15 +55,6 @@ int main(int argc, const char *args[])
 
 		assets()->remove(hashString("cragsman/cragsman.pack"));
 		engineFinalize();
-
-		try
-		{
-			configSaveIni("cragsman.ini", "cragsman");
-		}
-		catch (...)
-		{
-			CAGE_LOG(severityEnum::Warning, "cragsman", "failed to save game configuration");
-		}
 		return 0;
 	}
 	catch (const cage::exception &e)
