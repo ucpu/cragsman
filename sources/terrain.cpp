@@ -194,11 +194,11 @@ namespace
 				//t.normalName = assets()->generateUniqueName();
 				t.meshName = assets()->generateUniqueName();
 				t.objectName = assets()->generateUniqueName();
-				assets()->fabricate(assetSchemeIndexRenderTexture, t.albedoName, string() + "albedo " + t.pos);
-				assets()->fabricate(assetSchemeIndexRenderTexture, t.materialName, string() + "material " + t.pos);
-				//assets()->fabricate(assetSchemeIndexRenderTexture, t.normalName, string() + "normal " + t.pos);
-				assets()->fabricate(assetSchemeIndexMesh, t.meshName, string() + "mesh " + t.pos);
-				assets()->fabricate(assetSchemeIndexRenderObject, t.objectName, string() + "object " + t.pos);
+				assets()->fabricate(assetSchemeIndexRenderTexture, t.albedoName, stringizer() + "albedo " + t.pos);
+				assets()->fabricate(assetSchemeIndexRenderTexture, t.materialName, stringizer() + "material " + t.pos);
+				//assets()->fabricate(assetSchemeIndexRenderTexture, t.normalName, stringizer() + "normal " + t.pos);
+				assets()->fabricate(assetSchemeIndexMesh, t.meshName, stringizer() + "mesh " + t.pos);
+				assets()->fabricate(assetSchemeIndexRenderObject, t.objectName, stringizer() + "object " + t.pos);
 				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.albedoName, t.gpuAlbedo.get());
 				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.materialName, t.gpuMaterial.get());
 				//assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.normalName, t.gpuNormal.get());
@@ -469,7 +469,7 @@ namespace
 
 			uint32 cpuCount = max(processorsCount(), 2u) - 1;
 			for (uint32 i = 0; i < cpuCount; i++)
-				generatorThreads.push_back(newThread(delegate<void()>().bind<&generatorEntry>(), string() + "generator " + i));
+				generatorThreads.push_back(newThread(delegate<void()>().bind<&generatorEntry>(), stringizer() + "generator " + i));
 		}
 	} callbacksInitInstance;
 }

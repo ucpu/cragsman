@@ -16,8 +16,12 @@ struct tilePosStruct
 	{
 		return distance(vec2(x, y) * tileLength, vec2(playerPosition));
 	}
-	operator string () const { return string() + x + " " + y; }
 };
+
+inline stringizer &operator + (stringizer &s, const tilePosStruct &p)
+{
+	return s + p.x + " " + p.y;
+}
 
 std::set<tilePosStruct> findNeededTiles(real tileLength, real range);
 

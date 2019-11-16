@@ -22,12 +22,12 @@ namespace
 
 		{ // best
 			CAGE_COMPONENT_GUI(text, t, ents->get(texts[0]));
-			t.value = bestScore;
+			t.value = stringizer() + bestScore;
 		}
 
 		{ // current
 			CAGE_COMPONENT_GUI(text, t, ents->get(texts[1]));
-			t.value = currentScore;
+			t.value = stringizer() + currentScore;
 		}
 
 		return false;
