@@ -1,7 +1,3 @@
-#include <vector>
-#include <unordered_map>
-#include <algorithm>
-
 #include "common.h"
 
 #include <cage-core/entities.h>
@@ -11,26 +7,30 @@
 #include <cage-engine/core.h>
 #include <cage-engine/engine.h>
 
-entityComponent *springVisualComponent::component;
-entityComponent *timeoutComponent::component;
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
 
-springVisualComponent::springVisualComponent() : color(1, 1, 1)
+EntityComponent *SpringVisualComponent::component;
+EntityComponent *TimeoutComponent::component;
+
+SpringVisualComponent::SpringVisualComponent() : color(1, 1, 1)
 {}
 
-timeoutComponent::timeoutComponent() : ttl(0)
+TimeoutComponent::TimeoutComponent() : ttl(0)
 {}
 
-entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
+Entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
 {
-	entity *e = entities()->createAnonymous();
-	CAGE_COMPONENT_ENGINE(transform, t, e);
-	CAGE_COMPONENT_ENGINE(render, r, e);
-	GAME_GET_COMPONENT(physics, p, e);
-	GAME_GET_COMPONENT(timeout, to, e);
+	Entity *e = entities()->createAnonymous();
+	CAGE_COMPONENT_ENGINE(Transform, t, e);
+	CAGE_COMPONENT_ENGINE(Render, r, e);
+	GAME_COMPONENT(Physics, p, e);
+	GAME_COMPONENT(Timeout, to, e);
 	t.position = position;
 	t.orientation = randomDirectionQuat();
 	r.color = color;
-	r.object = hashString("cragsman/particle/particle.object");
+	r.object = HashString("cragsman/particle/particle.object");
 	p.mass = mass;
 	p.velocity = velocity;
 	p.collisionRadius = real::Nan();
@@ -47,11 +47,11 @@ vec3 colorDeviation(const vec3 &color, real deviation)
 
 namespace
 {
-	vec3 entMov(entity *e)
+	vec3 entMov(Entity *e)
 	{
-		if (e->has(physicsComponent::component))
+		if (e->has(PhysicsComponent::component))
 		{
-			GAME_GET_COMPONENT(physics, p, e);
+			GAME_COMPONENT(Physics, p, e);
 			return p.velocity / p.mass;
 		}
 		return {};
@@ -60,27 +60,27 @@ namespace
 	bool engineUpdate()
 	{
 		{ // timeout entities
-			std::vector<entity *> etd;
-			for (entity *e : timeoutComponent::component->entities())
+			std::vector<Entity *> etd;
+			for (Entity *e : TimeoutComponent::component->entities())
 			{
-				GAME_GET_COMPONENT(timeout, t, e);
+				GAME_COMPONENT(Timeout, t, e);
 				if (t.ttl-- == 0)
 					etd.push_back(e);
 			}
-			for (entity *e : etd)
+			for (Entity *e : etd)
 				e->destroy();
 		}
 
 		{ // spring visuals
-			for (entity *e : springVisualComponent::component->entities())
+			for (Entity *e : SpringVisualComponent::component->entities())
 			{
-				CAGE_ASSERT(e->has(springComponent::component));
-				GAME_GET_COMPONENT(spring, s, e);
-				GAME_GET_COMPONENT(springVisual, v, e);
-				entity *e0 = entities()->get(s.objects[0]);
-				entity *e1 = entities()->get(s.objects[1]);
-				CAGE_COMPONENT_ENGINE(transform, t0, e0);
-				CAGE_COMPONENT_ENGINE(transform, t1, e1);
+				CAGE_ASSERT(e->has(SpringComponent::component));
+				GAME_COMPONENT(Spring, s, e);
+				GAME_COMPONENT(SpringVisual, v, e);
+				Entity *e0 = entities()->get(s.objects[0]);
+				Entity *e1 = entities()->get(s.objects[1]);
+				CAGE_COMPONENT_ENGINE(Transform, t0, e0);
+				CAGE_COMPONENT_ENGINE(Transform, t1, e1);
 				vec3 v0 = entMov(e0);
 				vec3 v1 = entMov(e1);
 
@@ -95,13 +95,13 @@ namespace
 					real deviation = sin(rads::Full() * 0.5 * real(i) / cnt);
 					real portion = (randomChance() + i) / cnt;
 					vec3 color = colorDeviation(v.color, 0.1);
-					entity *pe = newParticle(
+					Entity *pe = newParticle(
 						interpolate(t0.position, t1.position, portion) + randomDirection3() * deviation * 1.5,
 						interpolate(v0, v1, portion) + randomDirection3() * deviation * 5,
 						color, 0.05, 5);
 					if (randomChance() < 0.2)
 					{
-						CAGE_COMPONENT_ENGINE(light, pl, pe);
+						CAGE_COMPONENT_ENGINE(Light, pl, pe);
 						pl.color = color * 1.5;
 						pl.attenuation = vec3(0, 0, 0.15);
 					}
@@ -114,22 +114,22 @@ namespace
 
 	bool engineInitialize()
 	{
-		springVisualComponent::component = entities()->defineComponent(springVisualComponent(), true);
-		timeoutComponent::component = entities()->defineComponent(timeoutComponent(), true);
+		SpringVisualComponent::component = entities()->defineComponent(SpringVisualComponent(), true);
+		TimeoutComponent::component = entities()->defineComponent(TimeoutComponent(), true);
 		return false;
 	}
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineInitListener;
-		eventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineInitListener;
+		EventListener<bool()> engineUpdateListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }

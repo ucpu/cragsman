@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "common.h"
 
 #include <cage-core/entities.h>
@@ -8,48 +6,50 @@
 #include <cage-engine/core.h>
 #include <cage-engine/engine.h>
 
+#include <vector>
+
 namespace
 {
-	struct boulderComponent
+	struct BoulderComponent
 	{
-		static entityComponent *component;
+		static EntityComponent *component;
 	};
 
-	entityComponent *boulderComponent::component;
+	EntityComponent *BoulderComponent::component;
 
 	bool engineUpdate()
 	{
 		if (!characterBody)
 			return false;
-		CAGE_COMPONENT_ENGINE(transform, pt, entities()->get(characterBody));
+		CAGE_COMPONENT_ENGINE(Transform, pt, entities()->get(characterBody));
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
-			entity *e = entities()->createAnonymous();
-			CAGE_COMPONENT_ENGINE(transform, t, e);
+			Entity *e = entities()->createAnonymous();
+			CAGE_COMPONENT_ENGINE(Transform, t, e);
 			t.scale = randomChance() + 1.5;
 			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
 			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
-			CAGE_COMPONENT_ENGINE(render, r, e);
-			r.object = hashString("cragsman/boulder/boulder.object");
+			CAGE_COMPONENT_ENGINE(Render, r, e);
+			r.object = HashString("cragsman/boulder/boulder.object");
 			{
 				real dummy;
 				terrainMaterial(vec2(t.position), r.color, dummy, dummy, true);
 			}
-			GAME_GET_COMPONENT(physics, p, e);
+			GAME_COMPONENT(Physics, p, e);
 			p.collisionRadius = t.scale;
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
-			GAME_GET_COMPONENT(boulder, br, e);
+			GAME_COMPONENT(Boulder, br, e);
 		}
-		std::vector<entity*> entsToDestroy;
-		for (entity *e : boulderComponent::component->entities())
+		std::vector<Entity*> entsToDestroy;
+		for (Entity *e : BoulderComponent::component->entities())
 		{ // rotate boulders
-			CAGE_COMPONENT_ENGINE(transform, t, e);
+			CAGE_COMPONENT_ENGINE(Transform, t, e);
 			if (t.position[1] < pt.position[1] - 150)
 				entsToDestroy.push_back(e);
 			else
 			{
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				vec3 r = 1.5 * p.velocity / p.collisionRadius;
 				quat rot = quat(degs(r[2] - r[1]), degs(), degs(-r[0]));
 				t.orientation = rot * t.orientation;
@@ -62,21 +62,21 @@ namespace
 
 	bool engineInitialize()
 	{
-		boulderComponent::component = entities()->defineComponent(boulderComponent(), true);
+		BoulderComponent::component = entities()->defineComponent(BoulderComponent(), true);
 		return false;
 	}
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineInitListener;
-		eventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineInitListener;
+		EventListener<bool()> engineUpdateListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }

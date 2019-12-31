@@ -6,50 +6,50 @@
 
 using namespace cage;
 
-void findInitialClinches(uint32 &count, entity **result);
-entity *findClinch(const vec3 &pos, real maxDist);
+void findInitialClinches(uint32 &count, Entity **result);
+Entity *findClinch(const vec3 &pos, real maxDist);
 real terrainOffset(const vec2 &position);
 void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly);
 vec3 terrainIntersection(const line &ln);
-void addTerrainCollider(uint32 name, collisionMesh *c);
+void addTerrainCollider(uint32 name, CollisionMesh *c);
 void removeTerrainCollider(uint32 name);
 real sphereVolume(real radius);
 vec3 colorDeviation(const vec3 &color, real deviation);
 quat sunLightOrientation(const vec2 &playerPosition);
 
-struct physicsComponent
+struct PhysicsComponent
 {
-	static entityComponent *component;
+	static EntityComponent *component;
 	vec3 velocity;
 	real mass;
 	real collisionRadius;
 };
 
-struct springComponent
+struct SpringComponent
 {
-	static entityComponent *component;
+	static EntityComponent *component;
 	uint32 objects[2];
 	real restDistance;
 	real stiffness;
 	real damping;
-	springComponent();
+	SpringComponent();
 };
 
-struct springVisualComponent
+struct SpringVisualComponent
 {
-	static entityComponent *component;
+	static EntityComponent *component;
 	vec3 color;
-	springVisualComponent();
+	SpringVisualComponent();
 };
 
-struct timeoutComponent
+struct TimeoutComponent
 {
-	static entityComponent *component;
+	static EntityComponent *component;
 	uint32 ttl;
-	timeoutComponent();
+	TimeoutComponent();
 };
 
-#define GAME_GET_COMPONENT(T,C,E) ::CAGE_JOIN(T, Component) &C = (E)->value<::CAGE_JOIN(T, Component)>(::CAGE_JOIN(T, Component)::component);
+#define GAME_COMPONENT(T,C,E) ::CAGE_JOIN(T, Component) &C = (E)->value<::CAGE_JOIN(T, Component)>(::CAGE_JOIN(T, Component)::component);
 
 extern uint32 cameraName;
 extern uint32 characterBody;

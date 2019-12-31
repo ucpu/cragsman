@@ -1,7 +1,3 @@
-#include <vector>
-#include <unordered_map>
-#include <algorithm>
-
 #include "common.h"
 
 #include <cage-core/geometry.h>
@@ -12,10 +8,14 @@
 #include <cage-engine/core.h>
 #include <cage-engine/engine.h>
 
-entityComponent *physicsComponent::component;
-entityComponent *springComponent::component;
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
 
-springComponent::springComponent() : objects{0, 0}
+EntityComponent *PhysicsComponent::component;
+EntityComponent *SpringComponent::component;
+
+SpringComponent::SpringComponent() : objects{0, 0}
 {}
 
 real sphereVolume(real radius)
@@ -25,49 +25,49 @@ real sphereVolume(real radius)
 
 namespace
 {
-	holder<collisionData> collisionSearchData;
-	holder<collisionQuery> collisionSearchQuery;
+	Holder<CollisionData> collisionSearchData;
+	Holder<CollisionQuery> collisionSearchQuery;
 
-	class physicsSimulationClass
+	class PhysicsSimulation
 	{
 	public:
 		static const uint32 repeatSteps = 2; // increasing steps increases simulation precision
 		const real deltaTime;
 
-		std::vector<entity*> entsToDestroy;
-		std::unordered_map<entity*, vec3> acceleration;
+		std::vector<Entity*> entsToDestroy;
+		std::unordered_map<Entity*, vec3> acceleration;
 
-		physicsSimulationClass() : deltaTime(controlThread().timePerTick * 1e-6f / repeatSteps)
+		PhysicsSimulation() : deltaTime(controlThread().timePerTick * 1e-6f / repeatSteps)
 		{}
 
-		static vec3 entPos(entity *e)
+		static vec3 entPos(Entity *e)
 		{
-			CAGE_COMPONENT_ENGINE(transform, t, e);
+			CAGE_COMPONENT_ENGINE(Transform, t, e);
 			return t.position;
 		}
 
-		static real entMass(entity *e)
+		static real entMass(Entity *e)
 		{
-			if (e->has(physicsComponent::component))
+			if (e->has(PhysicsComponent::component))
 			{
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				CAGE_ASSERT(p.mass > 1e-7, p.mass);
 				return p.mass;
 			}
 			return real::Infinity();
 		}
 
-		static vec3 entVel(entity *e)
+		static vec3 entVel(Entity *e)
 		{
-			if (e->has(physicsComponent::component))
+			if (e->has(PhysicsComponent::component))
 			{
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				return p.velocity;
 			}
 			return {};
 		}
 
-		void addForce(entity *e, const vec3 &f)
+		void addForce(Entity *e, const vec3 &f)
 		{
 			CAGE_ASSERT(f.valid(), f);
 			acceleration[e] += f / entMass(e);
@@ -76,14 +76,14 @@ namespace
 		void springs()
 		{
 			real timeStep2 = deltaTime * deltaTime;
-			for (entity *e : springComponent::component->entities())
+			for (Entity *e : SpringComponent::component->entities())
 			{
-				GAME_GET_COMPONENT(spring, s, e);
+				GAME_COMPONENT(Spring, s, e);
 				CAGE_ASSERT(s.restDistance >= 0, s.restDistance);
 				CAGE_ASSERT(s.stiffness > 0 && s.stiffness < 1, s.stiffness);
 				CAGE_ASSERT(s.damping > 0 && s.damping < 1, s.damping);
-				entity *e1 = entities()->get(s.objects[0]);
-				entity *e2 = entities()->get(s.objects[1]);
+				Entity *e1 = entities()->get(s.objects[0]);
+				Entity *e2 = entities()->get(s.objects[1]);
 				vec3 p1 = entPos(e1);
 				vec3 p2 = entPos(e2);
 				real m1 = entMass(e1);
@@ -106,14 +106,14 @@ namespace
 		void gravity()
 		{
 			vec3 g = vec3(0, -9.8, 0);
-			for (entity *e : physicsComponent::component->entities())
+			for (Entity *e : PhysicsComponent::component->entities())
 			{
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				addForce(e, p.mass * g);
 			}
 		}
 
-		vec3 collisionResponse(const transform &t, const physicsComponent &p, const triangle &tr)
+		vec3 collisionResponse(const transform &t, const PhysicsComponent &p, const triangle &tr)
 		{
 			vec3 n = tr.normal();
 			vec3 bounce = -2 * n * dot(n, p.velocity);
@@ -130,16 +130,16 @@ namespace
 
 		void collisions()
 		{
-			for (entity *e : physicsComponent::component->entities())
+			for (Entity *e : PhysicsComponent::component->entities())
 			{
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				if (!p.collisionRadius.valid())
 					continue;
-				CAGE_COMPONENT_ENGINE(transform, t, e);
+				CAGE_COMPONENT_ENGINE(Transform, t, e);
 				collisionSearchQuery->query(sphere(t.position, p.collisionRadius));
 				if (collisionSearchQuery->name())
 				{
-					const collisionMesh *c = nullptr;
+					const CollisionMesh *c = nullptr;
 					transform dummy;
 					collisionSearchQuery->collider(c, dummy);
 					CAGE_ASSERT(dummy == transform());
@@ -161,12 +161,12 @@ namespace
 
 		void applyAccelerations()
 		{
-			for (entity *e : physicsComponent::component->entities())
+			for (Entity *e : PhysicsComponent::component->entities())
 			{
 				CAGE_ASSERT(acceleration[e].valid(), acceleration[e]);
-				GAME_GET_COMPONENT(physics, p, e);
+				GAME_COMPONENT(Physics, p, e);
 				CAGE_ASSERT(p.velocity.valid(), p.velocity);
-				CAGE_COMPONENT_ENGINE(transform, t, e);
+				CAGE_COMPONENT_ENGINE(Transform, t, e);
 				CAGE_ASSERT(t.position.valid(), t.position);
 				p.velocity *= 0.995; // damping
 				p.velocity += acceleration[e] * deltaTime;
@@ -179,7 +179,7 @@ namespace
 			std::sort(entsToDestroy.begin(), entsToDestroy.end());
 			auto e = std::unique(entsToDestroy.begin(), entsToDestroy.end());
 			entsToDestroy.erase(e, entsToDestroy.end());
-			for (entity *e : entsToDestroy)
+			for (Entity *e : entsToDestroy)
 				e->destroy();
 		}
 
@@ -198,38 +198,38 @@ namespace
 
 	bool engineUpdate()
 	{
-		physicsSimulationClass simulation;
+		PhysicsSimulation simulation;
 		simulation.run();
 		return false;
 	}
 
 	bool engineInitialize()
 	{
-		physicsComponent::component = entities()->defineComponent(physicsComponent(), true);
-		springComponent::component = entities()->defineComponent(springComponent(), true);
+		PhysicsComponent::component = entities()->defineComponent(PhysicsComponent(), true);
+		SpringComponent::component = entities()->defineComponent(SpringComponent(), true);
 		return false;
 	}
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineInitListener;
-		eventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineInitListener;
+		EventListener<bool()> engineUpdateListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 			{
-				collisionSearchData = newCollisionData(collisionDataCreateConfig());
+				collisionSearchData = newCollisionData(CollisionDataCreateConfig());
 				collisionSearchQuery = newCollisionQuery(collisionSearchData.get());
 			}
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }
 
-void addTerrainCollider(uint32 name, collisionMesh *c)
+void addTerrainCollider(uint32 name, CollisionMesh *c)
 {
 	collisionSearchData->update(name, c, transform());
 	collisionSearchData->rebuild();
@@ -253,7 +253,7 @@ vec3 terrainIntersection(const line &ln)
 		CAGE_ASSERT(abs(base[2]) < 1e-5, base);
 		return vec3(vec2(base), terrainOffset(vec2(base)));
 	}
-	const collisionMesh *c = nullptr;
+	const CollisionMesh *c = nullptr;
 	transform dummy;
 	collisionSearchQuery->collider(c, dummy);
 	const triangle &t = c->triangles()[collisionSearchQuery->collisionPairs()[0].b];

@@ -1,8 +1,3 @@
-#include <vector>
-#include <array>
-#include <set>
-#include <atomic>
-
 #include "common.h"
 #include "baseTile.h"
 
@@ -21,13 +16,18 @@
 #include <cage-engine/assetStructs.h>
 #include <cage-engine/graphics/shaderConventions.h>
 
-std::set<tilePosStruct> findNeededTiles(real tileLength, real range)
+#include <vector>
+#include <array>
+#include <set>
+#include <atomic>
+
+std::set<TilePos> findNeededTiles(real tileLength, real range)
 {
-	std::set<tilePosStruct> neededTiles;
-	tilePosStruct pt;
+	std::set<TilePos> neededTiles;
+	TilePos pt;
 	pt.x = numeric_cast<sint32>(playerPosition[0] / tileLength);
 	pt.y = numeric_cast<sint32>(playerPosition[1] / tileLength);
-	tilePosStruct r;
+	TilePos r;
 	for (r.y = pt.y - 10; r.y <= pt.y + 10; r.y++)
 	{
 		for (r.x = pt.x - 10; r.x <= pt.x + 10; r.x++)
@@ -46,7 +46,7 @@ namespace
 	const uint32 tileTextureResolution = 128; // number of texels (in 1 dimension)
 	const real distanceToUnloadTile = 300;
 
-	enum class tileStatusEnum
+	enum class TileStateEnum
 	{
 		Init,
 		Generate,
@@ -60,7 +60,7 @@ namespace
 		Unload2,
 	};
 
-	struct vertexStruct
+	struct Vertex
 	{
 		vec3 position;
 		vec3 normal;
@@ -69,27 +69,27 @@ namespace
 		vec2 uv;
 	};
 
-	struct tileStruct
+	struct Tile
 	{
-		holder<collisionMesh> cpuCollider;
-		std::vector<vertexStruct> cpuMesh;
-		holder<renderMesh> gpuMesh;
-		holder<renderTexture> gpuAlbedo;
-		holder<image> cpuAlbedo;
-		holder<renderTexture> gpuMaterial;
-		holder<image> cpuMaterial;
-		//holder<renderTexture> gpuNormal;
-		//holder<image> cpuNormal;
-		holder<renderObject> gpuObject;
-		tilePosStruct pos;
-		entity *entity_;
-		std::atomic<tileStatusEnum> status;
+		Holder<CollisionMesh> cpuCollider;
+		std::vector<Vertex> cpuMesh;
+		Holder<Mesh> gpuMesh;
+		Holder<Texture> gpuAlbedo;
+		Holder<Image> cpuAlbedo;
+		Holder<Texture> gpuMaterial;
+		Holder<Image> cpuMaterial;
+		//Holder<Texture> gpuNormal;
+		//Holder<Image> cpuNormal;
+		Holder<RenderObject> gpuObject;
+		TilePos pos;
+		Entity *entity_;
+		std::atomic<TileStateEnum> status;
 		uint32 meshName;
 		uint32 albedoName;
 		uint32 materialName;
 		//uint32 normalName;
 		uint32 objectName;
-		tileStruct() : status(tileStatusEnum::Init), meshName(0), albedoName(0), materialName(0), /*normalName(0),*/ objectName(0)
+		Tile() : status(TileStateEnum::Init), meshName(0), albedoName(0), materialName(0), /*normalName(0),*/ objectName(0)
 		{}
 		real distanceToPlayer() const
 		{
@@ -97,7 +97,7 @@ namespace
 		}
 	};
 
-	std::array<tileStruct, 256> tiles;
+	std::array<Tile, 256> tiles;
 	bool stopping;
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -106,23 +106,23 @@ namespace
 
 	bool engineUpdate()
 	{
-		std::set<tilePosStruct> neededTiles = stopping ? std::set<tilePosStruct>() : findNeededTiles(tileLength, 200);
-		for (tileStruct &t : tiles)
+		std::set<TilePos> neededTiles = stopping ? std::set<TilePos>() : findNeededTiles(tileLength, 200);
+		for (Tile &t : tiles)
 		{
 			// mark unneeded tiles
-			if (t.status != tileStatusEnum::Init)
+			if (t.status != TileStateEnum::Init)
 				neededTiles.erase(t.pos);
 			// remove tiles
-			if (t.status == tileStatusEnum::Ready && (t.distanceToPlayer() > distanceToUnloadTile || stopping))
+			if (t.status == TileStateEnum::Ready && (t.distanceToPlayer() > distanceToUnloadTile || stopping))
 			{
 				removeTerrainCollider(t.objectName);
 				t.cpuCollider.clear();
 				t.entity_->destroy();
 				t.entity_ = nullptr;
-				t.status = tileStatusEnum::Defabricate;
+				t.status = TileStateEnum::Defabricate;
 			}
 			// create entity
-			else if (t.status == tileStatusEnum::Entity)
+			else if (t.status == TileStateEnum::Entity)
 			{
 				addTerrainCollider(t.objectName, t.cpuCollider.get());
 				{ // set texture names for the mesh
@@ -141,30 +141,30 @@ namespace
 				}
 				{ // create the entity
 					t.entity_ = entities()->createAnonymous();
-					CAGE_COMPONENT_ENGINE(transform, tr, t.entity_);
+					CAGE_COMPONENT_ENGINE(Transform, tr, t.entity_);
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
-					CAGE_COMPONENT_ENGINE(render, r, t.entity_);
+					CAGE_COMPONENT_ENGINE(Render, r, t.entity_);
 					r.object = t.objectName;
 				}
-				t.status = tileStatusEnum::Ready;
+				t.status = TileStateEnum::Ready;
 			}
 		}
 		// generate new needed tiles
-		for (tileStruct &t : tiles)
+		for (Tile &t : tiles)
 		{
 			if (neededTiles.empty())
 				break;
-			if (t.status == tileStatusEnum::Init)
+			if (t.status == TileStateEnum::Init)
 			{
 				t.pos = *neededTiles.begin();
 				neededTiles.erase(neededTiles.begin());
-				t.status = tileStatusEnum::Generate;
+				t.status = TileStateEnum::Generate;
 			}
 		}
 
 		if (!neededTiles.empty())
 		{
-			CAGE_LOG(severityEnum::Warning, "cragsman", "not enough terrain tile slots");
+			CAGE_LOG(SeverityEnum::Warning, "cragsman", "not enough terrain tile slots");
 			detail::debugBreakpoint();
 		}
 
@@ -185,28 +185,28 @@ namespace
 	{
 		if (stopping)
 			engineUpdate();
-		for (tileStruct &t : tiles)
+		for (Tile &t : tiles)
 		{
-			if (t.status == tileStatusEnum::Fabricate)
+			if (t.status == TileStateEnum::Fabricate)
 			{
 				t.albedoName = assets()->generateUniqueName();
 				t.materialName = assets()->generateUniqueName();
 				//t.normalName = assets()->generateUniqueName();
 				t.meshName = assets()->generateUniqueName();
 				t.objectName = assets()->generateUniqueName();
-				assets()->fabricate(assetSchemeIndexRenderTexture, t.albedoName, stringizer() + "albedo " + t.pos);
-				assets()->fabricate(assetSchemeIndexRenderTexture, t.materialName, stringizer() + "material " + t.pos);
-				//assets()->fabricate(assetSchemeIndexRenderTexture, t.normalName, stringizer() + "normal " + t.pos);
+				assets()->fabricate(assetSchemeIndexTexture, t.albedoName, stringizer() + "albedo " + t.pos);
+				assets()->fabricate(assetSchemeIndexTexture, t.materialName, stringizer() + "material " + t.pos);
+				//assets()->fabricate(assetSchemeIndexTexture, t.normalName, stringizer() + "normal " + t.pos);
 				assets()->fabricate(assetSchemeIndexMesh, t.meshName, stringizer() + "mesh " + t.pos);
 				assets()->fabricate(assetSchemeIndexRenderObject, t.objectName, stringizer() + "object " + t.pos);
-				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.albedoName, t.gpuAlbedo.get());
-				assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.materialName, t.gpuMaterial.get());
-				//assets()->set<assetSchemeIndexRenderTexture, renderTexture>(t.normalName, t.gpuNormal.get());
-				assets()->set<assetSchemeIndexMesh, renderMesh>(t.meshName, t.gpuMesh.get());
-				assets()->set<assetSchemeIndexRenderObject, renderObject>(t.objectName, t.gpuObject.get());
-				t.status = tileStatusEnum::Entity;
+				assets()->set<assetSchemeIndexTexture, Texture>(t.albedoName, t.gpuAlbedo.get());
+				assets()->set<assetSchemeIndexTexture, Texture>(t.materialName, t.gpuMaterial.get());
+				//assets()->set<assetSchemeIndexTexture, Texture>(t.normalName, t.gpuNormal.get());
+				assets()->set<assetSchemeIndexMesh, Mesh>(t.meshName, t.gpuMesh.get());
+				assets()->set<assetSchemeIndexRenderObject, RenderObject>(t.objectName, t.gpuObject.get());
+				t.status = TileStateEnum::Entity;
 			}
-			else if (t.status == tileStatusEnum::Defabricate)
+			else if (t.status == TileStateEnum::Defabricate)
 			{
 				assets()->remove(t.albedoName);
 				assets()->remove(t.materialName);
@@ -218,7 +218,7 @@ namespace
 				//t.normalName = 0;
 				t.meshName = 0;
 				t.objectName = 0;
-				t.status = tileStatusEnum::Unload1;
+				t.status = TileStateEnum::Unload1;
 			}
 		}
 		return false;
@@ -228,22 +228,22 @@ namespace
 	// DISPATCH
 	/////////////////////////////////////////////////////////////////////////////
 
-	holder<renderTexture> dispatchTexture(holder<image> &image)
+	Holder<Texture> dispatchTexture(Holder<Image> &Image)
 	{
-		holder<renderTexture> t = newRenderTexture();
-		switch (image->channels())
+		Holder<Texture> t = newTexture();
+		switch (Image->channels())
 		{
 		case 2:
-			t->image2d(image->width(), image->height(), GL_RG8, GL_RG, GL_UNSIGNED_BYTE, image->bufferData());
+			t->image2d(Image->width(), Image->height(), GL_RG8, GL_RG, GL_UNSIGNED_BYTE, Image->bufferData());
 			break;
 		case 3:
-			t->image2d(image->width(), image->height(), GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, image->bufferData());
+			t->image2d(Image->width(), Image->height(), GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, Image->bufferData());
 			break;
 		}
 		t->filters(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 100);
 		t->wraps(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 		t->generateMipmaps();
-		image.clear();
+		Image.clear();
 		return t;
 	}
 
@@ -273,57 +273,57 @@ namespace
 		return indices;
 	}
 
-	holder<renderMesh> dispatchMesh(std::vector<vertexStruct> &vertices)
+	Holder<Mesh> dispatchMesh(std::vector<Vertex> &vertices)
 	{
-		holder<renderMesh> m = newRenderMesh();
-		renderMeshHeader::materialData material;
+		Holder<Mesh> m = newMesh();
+		MeshHeader::MaterialData material;
 		const std::vector<uint32> &indices = meshIndices();
-		m->setBuffers(numeric_cast<uint32>(vertices.size()), sizeof(vertexStruct), vertices.data(), numeric_cast<uint32>(indices.size()), indices.data(), sizeof(material), &material);
+		m->setBuffers(numeric_cast<uint32>(vertices.size()), sizeof(Vertex), vertices.data(), numeric_cast<uint32>(indices.size()), indices.data(), sizeof(material), &material);
 		m->setPrimitiveType(GL_TRIANGLES);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_POSITION, 3, GL_FLOAT, sizeof(vertexStruct), 0);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_NORMAL, 3, GL_FLOAT, sizeof(vertexStruct), 12);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_UV, 2, GL_FLOAT, sizeof(vertexStruct), 24);
+		m->setAttribute(CAGE_SHADER_ATTRIB_IN_POSITION, 3, GL_FLOAT, sizeof(Vertex), 0);
+		m->setAttribute(CAGE_SHADER_ATTRIB_IN_NORMAL, 3, GL_FLOAT, sizeof(Vertex), 12);
+		m->setAttribute(CAGE_SHADER_ATTRIB_IN_UV, 2, GL_FLOAT, sizeof(Vertex), 24);
 		real l = tileLength * 0.5;
 		m->setBoundingBox(aabb(vec3(-l, -l, -real::Infinity()), vec3(l, l, real::Infinity())));
-		std::vector<vertexStruct>().swap(vertices);
+		std::vector<Vertex>().swap(vertices);
 		return m;
 	}
 
-	holder<renderObject> dispatchObject()
+	Holder<RenderObject> dispatchObject()
 	{
-		holder<renderObject> o = newRenderObject();
+		Holder<RenderObject> o = newRenderObject();
 		return o;
 	}
 
 	bool engineDispatch()
 	{
 		CAGE_CHECK_GL_ERROR_DEBUG();
-		for (tileStruct &t : tiles)
+		for (Tile &t : tiles)
 		{
-			if (t.status == tileStatusEnum::Unload1)
+			if (t.status == TileStateEnum::Unload1)
 			{
-				t.status = tileStatusEnum::Unload2;
+				t.status = TileStateEnum::Unload2;
 			}
-			else if (t.status == tileStatusEnum::Unload2)
+			else if (t.status == TileStateEnum::Unload2)
 			{
 				t.gpuAlbedo.clear();
 				t.gpuMaterial.clear();
 				t.gpuMesh.clear();
 				//t.gpuNormal.clear();
 				t.gpuObject.clear();
-				t.status = tileStatusEnum::Init;
+				t.status = TileStateEnum::Init;
 			}
 		}
-		for (tileStruct &t : tiles)
+		for (Tile &t : tiles)
 		{
-			if (t.status == tileStatusEnum::Upload)
+			if (t.status == TileStateEnum::Upload)
 			{
 				t.gpuAlbedo = dispatchTexture(t.cpuAlbedo);
 				t.gpuMaterial = dispatchTexture(t.cpuMaterial);
 				//t.gpuNormal = dispatchTexture(t.cpuNormal);
 				t.gpuMesh = dispatchMesh(t.cpuMesh);
 				t.gpuObject = dispatchObject();
-				t.status = tileStatusEnum::Fabricate;
+				t.status = TileStateEnum::Fabricate;
 				break;
 			}
 		}
@@ -335,19 +335,19 @@ namespace
 	// GENERATOR
 	/////////////////////////////////////////////////////////////////////////////
 
-	tileStruct *generatorChooseTile()
+	Tile *generatorChooseTile()
 	{
-		static holder<syncMutex> mut = newSyncMutex();
-		scopeLock<syncMutex> lock(mut);
-		tileStruct *result = nullptr;
-		for (tileStruct &t : tiles)
+		static Holder<Mutex> mut = newMutex();
+		ScopeLock<Mutex> lock(mut);
+		Tile *result = nullptr;
+		for (Tile &t : tiles)
 		{
-			if (t.status != tileStatusEnum::Generate)
+			if (t.status != TileStateEnum::Generate)
 				continue;
 			real d = t.distanceToPlayer();
 			if (d > distanceToUnloadTile)
 			{
-				t.status = tileStatusEnum::Init;
+				t.status = TileStateEnum::Init;
 				continue;
 			}
 			if (result && t.distanceToPlayer() > result->distanceToPlayer())
@@ -355,11 +355,11 @@ namespace
 			result = &t;
 		}
 		if (result)
-			result->status = tileStatusEnum::Generating;
+			result->status = TileStateEnum::Generating;
 		return result;
 	}
 
-	void generateMesh(tileStruct &t)
+	void generateMesh(Tile &t)
 	{
 		static const real pwoa = tileLength / (tileMeshResolution - 1);
 		static const vec2 pwox = vec2(pwoa, 0);
@@ -369,7 +369,7 @@ namespace
 		{
 			for (uint32 x = 0; x < tileMeshResolution; x++)
 			{
-				vertexStruct v;
+				Vertex v;
 				v.uv[0] = real(x) / (tileMeshResolution - 1);
 				v.uv[1] = real(y) / (tileMeshResolution - 1);
 				vec2 pt = (v.uv - 0.5) * tileLength;
@@ -383,7 +383,7 @@ namespace
 		}
 	}
 
-	void generateCollider(tileStruct &t)
+	void generateCollider(Tile &t)
 	{
 		transform m = transform(vec3(t.pos.x, t.pos.y, 0) * tileLength);
 		t.cpuCollider = newCollisionMesh();
@@ -401,13 +401,13 @@ namespace
 		t.cpuCollider->rebuild();
 	}
 
-	void initializeTexture(holder<image> &img, uint32 components)
+	void initializeTexture(Holder<Image> &img, uint32 components)
 	{
 		img = newImage();
 		img->empty(tileTextureResolution, tileTextureResolution, components);
 	}
 
-	void generateTextures(tileStruct &t)
+	void generateTextures(Tile &t)
 	{
 		initializeTexture(t.cpuAlbedo, 3);
 		initializeTexture(t.cpuMaterial, 2);
@@ -430,7 +430,7 @@ namespace
 	{
 		while (!stopping)
 		{
-			tileStruct *t = generatorChooseTile();
+			Tile *t = generatorChooseTile();
 			if (!t)
 			{
 				threadSleep(10000);
@@ -439,7 +439,7 @@ namespace
 			generateMesh(*t);
 			generateCollider(*t);
 			generateTextures(*t);
-			t->status = tileStatusEnum::Upload;
+			t->status = TileStateEnum::Upload;
 		}
 	}
 
@@ -447,16 +447,16 @@ namespace
 	// INITIALIZE
 	/////////////////////////////////////////////////////////////////////////////
 
-	std::vector<holder<threadHandle>> generatorThreads;
+	std::vector<Holder<Thread>> generatorThreads;
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineUpdateListener;
-		eventListener<bool()> engineAssetsListener;
-		eventListener<bool()> engineFinalizeListener;
-		eventListener<bool()> engineDispatchListener;
+		EventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineAssetsListener;
+		EventListener<bool()> engineFinalizeListener;
+		EventListener<bool()> engineDispatchListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
@@ -469,7 +469,7 @@ namespace
 
 			uint32 cpuCount = max(processorsCount(), 2u) - 1;
 			for (uint32 i = 0; i < cpuCount; i++)
-				generatorThreads.push_back(newThread(delegate<void()>().bind<&generatorEntry>(), stringizer() + "generator " + i));
+				generatorThreads.push_back(newThread(Delegate<void()>().bind<&generatorEntry>(), stringizer() + "generator " + i));
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }

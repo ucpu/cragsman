@@ -1,7 +1,3 @@
-#include <set>
-#include <vector>
-#include <algorithm>
-
 #include "common.h"
 #include "baseTile.h"
 
@@ -14,39 +10,42 @@
 #include <cage-engine/core.h>
 #include <cage-engine/engine.h>
 
+#include <vector>
+#include <algorithm>
+
 namespace
 {
 	const real tileLength = 70; // real world size of a tile (in 1 dimension)
 
-	holder<spatialData> spatialSearchData;
-	holder<spatialQuery> spatialSearchQuery;
+	Holder<SpatialData> spatialSearchData;
+	Holder<SpatialQuery> spatialSearchQuery;
 
-	struct tileStruct
+	struct Tile
 	{
-		tilePosStruct pos;
-		std::vector<entity *> clinches;
+		TilePos pos;
+		std::vector<Entity *> clinches;
 		real distanceToPlayer() const
 		{
 			return pos.distanceToPlayer(tileLength);
 		}
 	};
 
-	std::vector<tileStruct> tiles;
+	std::vector<Tile> tiles;
 
-	void generateClinches(tileStruct &t)
+	void generateClinches(Tile &t)
 	{
 		CAGE_ASSERT(t.clinches.empty());
-		randomGenerator rg(hash(t.pos.x), hash(t.pos.y));
+		RandomGenerator rg(hash(t.pos.x), hash(t.pos.y));
 		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
-			entity *e = entities()->createUnique();
+			Entity *e = entities()->createUnique();
 			t.clinches.push_back(e);
-			CAGE_COMPONENT_ENGINE(transform, tr, e);
+			CAGE_COMPONENT_ENGINE(Transform, tr, e);
 			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
 			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
-			CAGE_COMPONENT_ENGINE(render, r, e);
-			r.object = hashString("cragsman/clinch/clinch.object");
+			CAGE_COMPONENT_ENGINE(Render, r, e);
+			r.object = HashString("cragsman/clinch/clinch.object");
 		}
 	}
 
@@ -54,19 +53,19 @@ namespace
 	{
 		bool changes = false;
 		{ // remove unneeded tiles
-			tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [&](const tileStruct &t) {
+			tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [&](const Tile &t) {
 				bool r = t.distanceToPlayer() > 400;
 				changes |= r;
 				return r;
 			}), tiles.end());
 		}
 		{ // check needed tiles
-			std::set<tilePosStruct> needed = findNeededTiles(tileLength, 300);
-			for (tileStruct &t : tiles)
+			std::set<TilePos> needed = findNeededTiles(tileLength, 300);
+			for (Tile &t : tiles)
 				needed.erase(t.pos);
-			for (const tilePosStruct &n : needed)
+			for (const TilePos &n : needed)
 			{
-				tileStruct t;
+				Tile t;
 				t.pos = n;
 				generateClinches(t);
 				tiles.push_back(templates::move(t));
@@ -77,11 +76,11 @@ namespace
 			if (changes)
 			{
 				spatialSearchData->clear();
-				for (tileStruct &t : tiles)
+				for (Tile &t : tiles)
 				{
-					for (entity *e : t.clinches)
+					for (Entity *e : t.clinches)
 					{
-						CAGE_COMPONENT_ENGINE(transform, tr, e);
+						CAGE_COMPONENT_ENGINE(Transform, tr, e);
 						spatialSearchData->update(e->name(), sphere(tr.position, 1));
 					}
 				}
@@ -93,27 +92,27 @@ namespace
 
 	bool engineInitialize()
 	{
-		spatialSearchData = newSpatialData(spatialDataCreateConfig());
+		spatialSearchData = newSpatialData(SpatialDataCreateConfig());
 		spatialSearchQuery = newSpatialQuery(spatialSearchData.get());
 		return false;
 	}
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineUpdateListener;
-		eventListener<bool()> engineInitListener;
+		EventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineInitListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }
 
-void findInitialClinches(uint32 &count, entity **result)
+void findInitialClinches(uint32 &count, Entity **result)
 {
 	spatialSearchQuery->intersection(aabb::Universe());
 	auto res = spatialSearchQuery->result();
@@ -123,8 +122,8 @@ void findInitialClinches(uint32 &count, entity **result)
 		return;
 	}
 	std::sort(res.begin(), res.end(), [](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
-		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(Transform, ta, entities()->get(a));
+		CAGE_COMPONENT_ENGINE(Transform, tb, entities()->get(b));
 		real da = distance(ta.position, vec3());
 		real db = distance(tb.position, vec3());
 		return da < db;
@@ -133,15 +132,15 @@ void findInitialClinches(uint32 &count, entity **result)
 		result[i] = entities()->get(res[i]);
 }
 
-entity *findClinch(const vec3 &pos, real maxDist)
+Entity *findClinch(const vec3 &pos, real maxDist)
 {
 	spatialSearchQuery->intersection(sphere(pos, maxDist));
 	auto res = spatialSearchQuery->result();
 	if (!res.size())
 		return nullptr;
 	uint32 n = *std::min_element(res.begin(), res.end(), [pos](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(transform, ta, entities()->get(a));
-		CAGE_COMPONENT_ENGINE(transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(Transform, ta, entities()->get(a));
+		CAGE_COMPONENT_ENGINE(Transform, tb, entities()->get(b));
 		real da = distance(ta.position, pos);
 		real db = distance(tb.position, pos);
 		return da < db;

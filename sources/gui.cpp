@@ -1,4 +1,3 @@
-
 #include "common.h"
 
 #include <cage-core/entities.h>
@@ -18,15 +17,15 @@ namespace
 		sint32 currentScore = numeric_cast<sint32>(playerPosition[1] * 0.1);
 		bestScore = max(currentScore, bestScore);
 
-		entityManager *ents = gui()->entities();
+		EntityManager *ents = gui()->entities();
 
 		{ // best
-			CAGE_COMPONENT_GUI(text, t, ents->get(texts[0]));
+			CAGE_COMPONENT_GUI(Text, t, ents->get(texts[0]));
 			t.value = stringizer() + bestScore;
 		}
 
 		{ // current
-			CAGE_COMPONENT_GUI(text, t, ents->get(texts[1]));
+			CAGE_COMPONENT_GUI(Text, t, ents->get(texts[1]));
 			t.value = stringizer() + currentScore;
 		}
 
@@ -35,57 +34,57 @@ namespace
 
 	bool engineInitialize()
 	{
-		entityManager *ents = gui()->entities();
+		EntityManager *ents = gui()->entities();
 
-		entity *panel = nullptr;
+		Entity *panel = nullptr;
 		{ // panel
-			entity *wrapper = ents->createUnique();
-			CAGE_COMPONENT_GUI(scrollbars, sc, wrapper);
+			Entity *wrapper = ents->createUnique();
+			CAGE_COMPONENT_GUI(Scrollbars, sc, wrapper);
 			panel = ents->createUnique();
-			CAGE_COMPONENT_GUI(parent, parent, panel);
+			CAGE_COMPONENT_GUI(Parent, parent, panel);
 			parent.parent = wrapper->name();
-			CAGE_COMPONENT_GUI(panel, g, panel);
-			CAGE_COMPONENT_GUI(layoutTable, lt, panel);
+			CAGE_COMPONENT_GUI(Panel, g, panel);
+			CAGE_COMPONENT_GUI(LayoutTable, lt, panel);
 		}
 
 		{ // best score
 			{ // label
-				entity *e = ents->createUnique();
-				CAGE_COMPONENT_GUI(parent, p, e);
+				Entity *e = ents->createUnique();
+				CAGE_COMPONENT_GUI(Parent, p, e);
 				p.parent = panel->name();
 				p.order = 1;
-				CAGE_COMPONENT_GUI(label, l, e);
-				CAGE_COMPONENT_GUI(text, t, e);
+				CAGE_COMPONENT_GUI(Label, l, e);
+				CAGE_COMPONENT_GUI(Text, t, e);
 				t.value = "Best Score: ";
 			}
 			{ // value
-				entity *e = ents->createUnique();
-				CAGE_COMPONENT_GUI(parent, p, e);
+				Entity *e = ents->createUnique();
+				CAGE_COMPONENT_GUI(Parent, p, e);
 				p.parent = panel->name();
 				p.order = 2;
-				CAGE_COMPONENT_GUI(label, l, e);
-				CAGE_COMPONENT_GUI(text, t, e);
+				CAGE_COMPONENT_GUI(Label, l, e);
+				CAGE_COMPONENT_GUI(Text, t, e);
 				texts[0] = e->name();
 			}
 		}
 
 		{ // current score
 			{ // label
-				entity *e = ents->createUnique();
-				CAGE_COMPONENT_GUI(parent, p, e);
+				Entity *e = ents->createUnique();
+				CAGE_COMPONENT_GUI(Parent, p, e);
 				p.parent = panel->name();
 				p.order = 3;
-				CAGE_COMPONENT_GUI(label, l, e);
-				CAGE_COMPONENT_GUI(text, t, e);
+				CAGE_COMPONENT_GUI(Label, l, e);
+				CAGE_COMPONENT_GUI(Text, t, e);
 				t.value = "Current Score: ";
 			}
 			{ // value
-				entity *e = ents->createUnique();
-				CAGE_COMPONENT_GUI(parent, p, e);
+				Entity *e = ents->createUnique();
+				CAGE_COMPONENT_GUI(Parent, p, e);
 				p.parent = panel->name();
 				p.order = 4;
-				CAGE_COMPONENT_GUI(label, l, e);
-				CAGE_COMPONENT_GUI(text, t, e);
+				CAGE_COMPONENT_GUI(Label, l, e);
+				CAGE_COMPONENT_GUI(Text, t, e);
 				texts[1] = e->name();
 			}
 		}
@@ -93,17 +92,17 @@ namespace
 		return false;
 	}
 
-	class callbacksInitClass
+	class Callbacks
 	{
-		eventListener<bool()> engineInitListener;
-		eventListener<bool()> engineUpdateListener;
+		EventListener<bool()> engineInitListener;
+		EventListener<bool()> engineUpdateListener;
 	public:
-		callbacksInitClass()
+		Callbacks()
 		{
 			engineInitListener.attach(controlThread().initialize);
 			engineInitListener.bind<&engineInitialize>();
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 		}
-	} callbacksInitInstance;
+	} callbacksInstance;
 }
