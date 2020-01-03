@@ -22,7 +22,7 @@ TimeoutComponent::TimeoutComponent() : ttl(0)
 
 Entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
 {
-	Entity *e = entities()->createAnonymous();
+	Entity *e = engineEntities()->createAnonymous();
 	CAGE_COMPONENT_ENGINE(Transform, t, e);
 	CAGE_COMPONENT_ENGINE(Render, r, e);
 	GAME_COMPONENT(Physics, p, e);
@@ -77,8 +77,8 @@ namespace
 				CAGE_ASSERT(e->has(SpringComponent::component));
 				GAME_COMPONENT(Spring, s, e);
 				GAME_COMPONENT(SpringVisual, v, e);
-				Entity *e0 = entities()->get(s.objects[0]);
-				Entity *e1 = entities()->get(s.objects[1]);
+				Entity *e0 = engineEntities()->get(s.objects[0]);
+				Entity *e1 = engineEntities()->get(s.objects[1]);
 				CAGE_COMPONENT_ENGINE(Transform, t0, e0);
 				CAGE_COMPONENT_ENGINE(Transform, t1, e1);
 				vec3 v0 = entMov(e0);
@@ -114,8 +114,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		SpringVisualComponent::component = entities()->defineComponent(SpringVisualComponent(), true);
-		TimeoutComponent::component = entities()->defineComponent(TimeoutComponent(), true);
+		SpringVisualComponent::component = engineEntities()->defineComponent(SpringVisualComponent(), true);
+		TimeoutComponent::component = engineEntities()->defineComponent(TimeoutComponent(), true);
 		return false;
 	}
 

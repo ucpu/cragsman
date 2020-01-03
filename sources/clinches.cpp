@@ -39,7 +39,7 @@ namespace
 		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
-			Entity *e = entities()->createUnique();
+			Entity *e = engineEntities()->createUnique();
 			t.clinches.push_back(e);
 			CAGE_COMPONENT_ENGINE(Transform, tr, e);
 			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
@@ -122,14 +122,14 @@ void findInitialClinches(uint32 &count, Entity **result)
 		return;
 	}
 	std::sort(res.begin(), res.end(), [](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(Transform, ta, entities()->get(a));
-		CAGE_COMPONENT_ENGINE(Transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(Transform, ta, engineEntities()->get(a));
+		CAGE_COMPONENT_ENGINE(Transform, tb, engineEntities()->get(b));
 		real da = distance(ta.position, vec3());
 		real db = distance(tb.position, vec3());
 		return da < db;
 	});
 	for (uint32 i = 0; i < count; i++)
-		result[i] = entities()->get(res[i]);
+		result[i] = engineEntities()->get(res[i]);
 }
 
 Entity *findClinch(const vec3 &pos, real maxDist)
@@ -139,11 +139,11 @@ Entity *findClinch(const vec3 &pos, real maxDist)
 	if (!res.size())
 		return nullptr;
 	uint32 n = *std::min_element(res.begin(), res.end(), [pos](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(Transform, ta, entities()->get(a));
-		CAGE_COMPONENT_ENGINE(Transform, tb, entities()->get(b));
+		CAGE_COMPONENT_ENGINE(Transform, ta, engineEntities()->get(a));
+		CAGE_COMPONENT_ENGINE(Transform, tb, engineEntities()->get(b));
 		real da = distance(ta.position, pos);
 		real db = distance(tb.position, pos);
 		return da < db;
 	});
-	return entities()->get(n);
+	return engineEntities()->get(n);
 }

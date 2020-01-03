@@ -35,14 +35,14 @@ int main(int argc, const char *args[])
 		log1->format.bind<logFormatConsole>();
 		log1->output.bind<logOutputStdOut>();
 
-		controlThread().timePerTick = 1000000 / 30;
 		engineInitialize(EngineCreateConfig());
-		assets()->add(HashString("cragsman/cragsman.pack"));
+		controlThread().updatePeriod(1000000 / 30);
+		engineAssets()->add(HashString("cragsman/cragsman.pack"));
 
 		EventListener<bool()> windowCloseListener;
 		windowCloseListener.bind<&windowClose>();
-		window()->events.windowClose.attach(windowCloseListener);
-		window()->title("Cragsman");
+		engineWindow()->events.windowClose.attach(windowCloseListener);
+		engineWindow()->title("Cragsman");
 
 		{
 			Holder<FullscreenSwitcher> fullscreen = newFullscreenSwitcher({});
@@ -53,7 +53,7 @@ int main(int argc, const char *args[])
 			engineStart();
 		}
 
-		assets()->remove(HashString("cragsman/cragsman.pack"));
+		engineAssets()->remove(HashString("cragsman/cragsman.pack"));
 		engineFinalize();
 		return 0;
 	}

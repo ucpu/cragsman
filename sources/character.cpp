@@ -36,7 +36,7 @@ namespace
 
 	Entity *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
 	{
-		Entity *spring = entities()->createUnique();
+		Entity *spring = engineEntities()->createUnique();
 		GAME_COMPONENT(Spring, s, spring);
 		s.objects[0] = a;
 		s.objects[1] = b;
@@ -78,13 +78,13 @@ namespace
 
 	vec3 screenToWorld(const ivec2 &point)
 	{
-		ivec2 res = window()->resolution();
+		ivec2 res = engineWindow()->resolution();
 		vec2 p = vec2(point.x, point.y);
 		p /= vec2(res.x, res.y);
 		p = p * 2 - 1;
 		real px = p[0], py = -p[1];
-		CAGE_COMPONENT_ENGINE(Transform, ts, entities()->get(cameraName));
-		CAGE_COMPONENT_ENGINE(Camera, cs, entities()->get(cameraName));
+		CAGE_COMPONENT_ENGINE(Transform, ts, engineEntities()->get(cameraName));
+		CAGE_COMPONENT_ENGINE(Camera, cs, engineEntities()->get(cameraName));
 		mat4 view = mat4(inverse(ts));
 		mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, real(res.x) / real(res.y), cs.near, cs.far);
 		mat4 inv = inverse(proj * view);
@@ -99,24 +99,24 @@ namespace
 	{
 		if (b == MouseButtonsFlags::Left && m == ModifiersFlags::None)
 		{
-			CAGE_COMPONENT_ENGINE(Transform, ht, entities()->get(characterHands[currentHand]));
+			CAGE_COMPONENT_ENGINE(Transform, ht, engineEntities()->get(characterHands[currentHand]));
 			Entity *clinch = findClinch(ht.position, 3);
 			if (clinch)
 			{
 				uint32 clinchName = clinch->name();
 				for (uint32 i = 0; i < characterHandsCount; i++)
 				{
-					GAME_COMPONENT(Spring, s, entities()->get(characterHandJoints[i]));
+					GAME_COMPONENT(Spring, s, engineEntities()->get(characterHandJoints[i]));
 					if (s.objects[1] == clinchName)
 						return true; // do not allow multiple hands on single clinch
 				}
 				{ // attach current hand to the clinch
-					GAME_COMPONENT(Spring, s, entities()->get(characterHandJoints[currentHand]));
+					GAME_COMPONENT(Spring, s, engineEntities()->get(characterHandJoints[currentHand]));
 					s.objects[1] = clinchName;
 				}
 				currentHand = (currentHand + 1) % characterHandsCount;
 				{ // free another hand
-					GAME_COMPONENT(Spring, s, entities()->get(characterHandJoints[currentHand]));
+					GAME_COMPONENT(Spring, s, engineEntities()->get(characterHandJoints[currentHand]));
 					s.objects[1] = cursorName;
 				}
 			}
@@ -138,7 +138,7 @@ namespace
 
 		{ // camera
 			Entity *cam;
-			cameraName = (cam = entities()->createUnique())->name();
+			cameraName = (cam = engineEntities()->createUnique())->name();
 			CAGE_COMPONENT_ENGINE(Transform, t, cam);
 			CAGE_COMPONENT_ENGINE(Camera, c, cam);
 			c.ambientLight = vec3(0.03);
@@ -150,7 +150,7 @@ namespace
 
 		{ // light
 			Entity *lig;
-			lightName = (lig = entities()->createUnique())->name();
+			lightName = (lig = engineEntities()->createUnique())->name();
 			CAGE_COMPONENT_ENGINE(Transform, t, lig);
 			CAGE_COMPONENT_ENGINE(Light, l, lig);
 			CAGE_COMPONENT_ENGINE(Shadowmap, s, lig);
@@ -162,13 +162,13 @@ namespace
 
 		{ // cursor
 			Entity *cur;
-			cursorName = (cur = entities()->createUnique())->name();
+			cursorName = (cur = engineEntities()->createUnique())->name();
 			CAGE_COMPONENT_ENGINE(Transform, t, cur);
 		}
 
 		{ // body
 			Entity *body;
-			characterBody = (body = entities()->createUnique())->name();
+			characterBody = (body = engineEntities()->createUnique())->name();
 			CAGE_COMPONENT_ENGINE(Transform, t, body);
 			CAGE_COMPONENT_ENGINE(Render, r, body);
 			r.object = HashString("cragsman/character/body.object");
@@ -181,9 +181,9 @@ namespace
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
 				Entity *hand = nullptr, *elbow = nullptr, *shoulder = nullptr;
-				characterShoulders[i] = (shoulder = entities()->createUnique())->name();
-				characterElbows[i] = (elbow = entities()->createUnique())->name();
-				characterHands[i] = (hand = entities()->createUnique())->name();
+				characterShoulders[i] = (shoulder = engineEntities()->createUnique())->name();
+				characterElbows[i] = (elbow = engineEntities()->createUnique())->name();
+				characterHands[i] = (hand = engineEntities()->createUnique())->name();
 				{ // shoulder
 					CAGE_COMPONENT_ENGINE(Transform, t, shoulder);
 					CAGE_COMPONENT_ENGINE(Render, r, shoulder);
@@ -242,9 +242,9 @@ namespace
 		}
 
 		{ // player position
-			if (characterBody && entities()->has(characterBody))
+			if (characterBody && engineEntities()->has(characterBody))
 			{
-				CAGE_COMPONENT_ENGINE(Transform, t, entities()->get(characterBody));
+				CAGE_COMPONENT_ENGINE(Transform, t, engineEntities()->get(characterBody));
 				playerPosition = t.position;
 			}
 			else
@@ -252,22 +252,22 @@ namespace
 		}
 
 		{ // cursor
-			CAGE_COMPONENT_ENGINE(Transform, bt, entities()->get(characterBody));
-			vec3 target = screenToWorld(window()->mousePosition());
+			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
+			vec3 target = screenToWorld(engineWindow()->mousePosition());
 			if (target.valid())
 			{
 				static const real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = normalize(target - bt.position) * maxBodyCursorDistance + bt.position;
-				CAGE_COMPONENT_ENGINE(Transform, ct, entities()->get(cursorName));
+				CAGE_COMPONENT_ENGINE(Transform, ct, engineEntities()->get(cursorName));
 				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
 				ct.position = target;
 			}
 		}
 
 		{ // camera
-			CAGE_COMPONENT_ENGINE(Transform, bt, entities()->get(characterBody));
-			CAGE_COMPONENT_ENGINE(Transform, ct, entities()->get(cameraName));
+			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
+			CAGE_COMPONENT_ENGINE(Transform, ct, engineEntities()->get(cameraName));
 			smoothBodyPosition.add(bt.position);
 			vec3 sbp = smoothBodyPosition.smooth();
 			ct.position = sbp + vec3(0, 0, 100);
@@ -276,8 +276,8 @@ namespace
 		}
 
 		{ // light
-			CAGE_COMPONENT_ENGINE(Transform, bt, entities()->get(characterBody));
-			CAGE_COMPONENT_ENGINE(Transform, lt, entities()->get(lightName));
+			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
+			CAGE_COMPONENT_ENGINE(Transform, lt, engineEntities()->get(lightName));
 			lt.position = bt.position;
 			lt.orientation = sunLightOrientation(vec2(playerPosition));
 		}
@@ -285,8 +285,8 @@ namespace
 		{ // hands orientations
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				CAGE_COMPONENT_ENGINE(Transform, ht, entities()->get(characterHands[i]));
-				CAGE_COMPONENT_ENGINE(Transform, et, entities()->get(characterElbows[i]));
+				CAGE_COMPONENT_ENGINE(Transform, ht, engineEntities()->get(characterHands[i]));
+				CAGE_COMPONENT_ENGINE(Transform, et, engineEntities()->get(characterElbows[i]));
 				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
 			}
 		}
@@ -296,7 +296,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		windowListeners.attachAll(window());
+		windowListeners.attachAll(engineWindow());
 		windowListeners.mousePress.bind<&mousePress>();
 		return false;
 	}

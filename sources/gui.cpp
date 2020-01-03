@@ -17,7 +17,7 @@ namespace
 		sint32 currentScore = numeric_cast<sint32>(playerPosition[1] * 0.1);
 		bestScore = max(currentScore, bestScore);
 
-		EntityManager *ents = gui()->entities();
+		EntityManager *ents = engineGui()->entities();
 
 		{ // best
 			CAGE_COMPONENT_GUI(Text, t, ents->get(texts[0]));
@@ -34,7 +34,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		EntityManager *ents = gui()->entities();
+		EntityManager *ents = engineGui()->entities();
 
 		Entity *panel = nullptr;
 		{ // panel

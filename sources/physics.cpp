@@ -37,7 +37,7 @@ namespace
 		std::vector<Entity*> entsToDestroy;
 		std::unordered_map<Entity*, vec3> acceleration;
 
-		PhysicsSimulation() : deltaTime(controlThread().timePerTick * 1e-6f / repeatSteps)
+		PhysicsSimulation() : deltaTime(controlThread().updatePeriod() * 1e-6f / repeatSteps)
 		{}
 
 		static vec3 entPos(Entity *e)
@@ -82,8 +82,8 @@ namespace
 				CAGE_ASSERT(s.restDistance >= 0, s.restDistance);
 				CAGE_ASSERT(s.stiffness > 0 && s.stiffness < 1, s.stiffness);
 				CAGE_ASSERT(s.damping > 0 && s.damping < 1, s.damping);
-				Entity *e1 = entities()->get(s.objects[0]);
-				Entity *e2 = entities()->get(s.objects[1]);
+				Entity *e1 = engineEntities()->get(s.objects[0]);
+				Entity *e2 = engineEntities()->get(s.objects[1]);
 				vec3 p1 = entPos(e1);
 				vec3 p2 = entPos(e2);
 				real m1 = entMass(e1);
@@ -205,8 +205,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		PhysicsComponent::component = entities()->defineComponent(PhysicsComponent(), true);
-		SpringComponent::component = entities()->defineComponent(SpringComponent(), true);
+		PhysicsComponent::component = engineEntities()->defineComponent(PhysicsComponent(), true);
+		SpringComponent::component = engineEntities()->defineComponent(SpringComponent(), true);
 		return false;
 	}
 

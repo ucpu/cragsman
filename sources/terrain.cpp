@@ -140,7 +140,7 @@ namespace
 					t.gpuObject->setLods(1, 1, thresholds, meshIndices, meshNames);
 				}
 				{ // create the entity
-					t.entity_ = entities()->createAnonymous();
+					t.entity_ = engineEntities()->createAnonymous();
 					CAGE_COMPONENT_ENGINE(Transform, tr, t.entity_);
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
 					CAGE_COMPONENT_ENGINE(Render, r, t.entity_);
@@ -181,7 +181,7 @@ namespace
 	// ASSETS
 	/////////////////////////////////////////////////////////////////////////////
 
-	bool engineAssets()
+	bool engineTerrainAssets()
 	{
 		if (stopping)
 			engineUpdate();
@@ -189,30 +189,30 @@ namespace
 		{
 			if (t.status == TileStateEnum::Fabricate)
 			{
-				t.albedoName = assets()->generateUniqueName();
-				t.materialName = assets()->generateUniqueName();
-				//t.normalName = assets()->generateUniqueName();
-				t.meshName = assets()->generateUniqueName();
-				t.objectName = assets()->generateUniqueName();
-				assets()->fabricate(assetSchemeIndexTexture, t.albedoName, stringizer() + "albedo " + t.pos);
-				assets()->fabricate(assetSchemeIndexTexture, t.materialName, stringizer() + "material " + t.pos);
-				//assets()->fabricate(assetSchemeIndexTexture, t.normalName, stringizer() + "normal " + t.pos);
-				assets()->fabricate(assetSchemeIndexMesh, t.meshName, stringizer() + "mesh " + t.pos);
-				assets()->fabricate(assetSchemeIndexRenderObject, t.objectName, stringizer() + "object " + t.pos);
-				assets()->set<assetSchemeIndexTexture, Texture>(t.albedoName, t.gpuAlbedo.get());
-				assets()->set<assetSchemeIndexTexture, Texture>(t.materialName, t.gpuMaterial.get());
-				//assets()->set<assetSchemeIndexTexture, Texture>(t.normalName, t.gpuNormal.get());
-				assets()->set<assetSchemeIndexMesh, Mesh>(t.meshName, t.gpuMesh.get());
-				assets()->set<assetSchemeIndexRenderObject, RenderObject>(t.objectName, t.gpuObject.get());
+				t.albedoName = engineAssets()->generateUniqueName();
+				t.materialName = engineAssets()->generateUniqueName();
+				//t.normalName = engineAssets()->generateUniqueName();
+				t.meshName = engineAssets()->generateUniqueName();
+				t.objectName = engineAssets()->generateUniqueName();
+				engineAssets()->fabricate(assetSchemeIndexTexture, t.albedoName, stringizer() + "albedo " + t.pos);
+				engineAssets()->fabricate(assetSchemeIndexTexture, t.materialName, stringizer() + "material " + t.pos);
+				//engineAssets()->fabricate(assetSchemeIndexTexture, t.normalName, stringizer() + "normal " + t.pos);
+				engineAssets()->fabricate(assetSchemeIndexMesh, t.meshName, stringizer() + "mesh " + t.pos);
+				engineAssets()->fabricate(assetSchemeIndexRenderObject, t.objectName, stringizer() + "object " + t.pos);
+				engineAssets()->set<assetSchemeIndexTexture, Texture>(t.albedoName, t.gpuAlbedo.get());
+				engineAssets()->set<assetSchemeIndexTexture, Texture>(t.materialName, t.gpuMaterial.get());
+				//engineAssets()->set<assetSchemeIndexTexture, Texture>(t.normalName, t.gpuNormal.get());
+				engineAssets()->set<assetSchemeIndexMesh, Mesh>(t.meshName, t.gpuMesh.get());
+				engineAssets()->set<assetSchemeIndexRenderObject, RenderObject>(t.objectName, t.gpuObject.get());
 				t.status = TileStateEnum::Entity;
 			}
 			else if (t.status == TileStateEnum::Defabricate)
 			{
-				assets()->remove(t.albedoName);
-				assets()->remove(t.materialName);
-				//assets()->remove(t.normalName);
-				assets()->remove(t.meshName);
-				assets()->remove(t.objectName);
+				engineAssets()->remove(t.albedoName);
+				engineAssets()->remove(t.materialName);
+				//engineAssets()->remove(t.normalName);
+				engineAssets()->remove(t.meshName);
+				engineAssets()->remove(t.objectName);
 				t.albedoName = 0;
 				t.materialName = 0;
 				//t.normalName = 0;
@@ -461,7 +461,7 @@ namespace
 			engineUpdateListener.attach(controlThread().update);
 			engineUpdateListener.bind<&engineUpdate>();
 			engineAssetsListener.attach(controlThread().assets);
-			engineAssetsListener.bind<&engineAssets>();
+			engineAssetsListener.bind<&engineTerrainAssets>();
 			engineFinalizeListener.attach(controlThread().finalize);
 			engineFinalizeListener.bind<&engineFinalize>();
 			engineDispatchListener.attach(graphicsDispatchThread().render);

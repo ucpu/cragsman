@@ -21,10 +21,10 @@ namespace
 	{
 		if (!characterBody)
 			return false;
-		CAGE_COMPONENT_ENGINE(Transform, pt, entities()->get(characterBody));
+		CAGE_COMPONENT_ENGINE(Transform, pt, engineEntities()->get(characterBody));
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
-			Entity *e = entities()->createAnonymous();
+			Entity *e = engineEntities()->createAnonymous();
 			CAGE_COMPONENT_ENGINE(Transform, t, e);
 			t.scale = randomChance() + 1.5;
 			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
@@ -62,7 +62,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		BoulderComponent::component = entities()->defineComponent(BoulderComponent(), true);
+		BoulderComponent::component = engineEntities()->defineComponent(BoulderComponent(), true);
 		return false;
 	}
 
