@@ -1,6 +1,3 @@
-#include "common.h"
-#include "baseTile.h"
-
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
 #include <cage-core/concurrent.h>
@@ -9,13 +6,16 @@
 #include <cage-core/image.h>
 #include <cage-core/collisionMesh.h>
 #include <cage-core/threadPool.h>
+#include <cage-core/debug.h>
 
-#include <cage-engine/core.h>
 #include <cage-engine/engine.h>
 #include <cage-engine/graphics.h>
 #include <cage-engine/opengl.h>
 #include <cage-engine/assetStructs.h>
-#include <cage-engine/graphics/shaderConventions.h>
+#include <cage-engine/shaderConventions.h>
+
+#include "common.h"
+#include "baseTile.h"
 
 #include <vector>
 #include <array>

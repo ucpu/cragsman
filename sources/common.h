@@ -49,7 +49,7 @@ struct TimeoutComponent
 	TimeoutComponent();
 };
 
-#define GAME_COMPONENT(T,C,E) ::CAGE_JOIN(T, Component) &C = (E)->value<::CAGE_JOIN(T, Component)>(::CAGE_JOIN(T, Component)::component);
+#define GAME_COMPONENT(T,C,E) ::T##Component &C = (E)->value<::T##Component>(::T##Component::component);
 
 extern uint32 cameraName;
 extern uint32 characterBody;
