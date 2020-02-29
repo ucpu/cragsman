@@ -150,7 +150,7 @@ namespace
 		real v = evaluateClamp(value3, pos);
 		vec3 hsv = colorRgbToHsv(color) + (vec3(h, s, v) - 0.5) * deviation;
 		hsv[0] = (hsv[0] + 1) % 1;
-		return colorHsvToRgb(clamp(hsv, vec3(), vec3(1, 1, 1)));
+		return colorHsvToRgb(clamp(hsv, 0, 1));
 	}
 
 	void darkRockGeneral(const vec2 &pos, vec3 &color, real &roughness, real &metallic, const vec3 *colors, uint32 colorsCount)

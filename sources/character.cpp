@@ -141,7 +141,8 @@ namespace
 			cameraName = (cam = engineEntities()->createUnique())->name();
 			CAGE_COMPONENT_ENGINE(Transform, t, cam);
 			CAGE_COMPONENT_ENGINE(Camera, c, cam);
-			c.ambientLight = vec3(0.03);
+			c.ambientColor = vec3(1);
+			c.ambientIntensity = 0.03;
 			c.near = 10;
 			c.far = 500;
 			c.effects = CameraEffectsFlags::CombinedPass;
@@ -155,7 +156,8 @@ namespace
 			CAGE_COMPONENT_ENGINE(Light, l, lig);
 			CAGE_COMPONENT_ENGINE(Shadowmap, s, lig);
 			l.lightType = LightTypeEnum::Directional;
-			l.color = vec3(3);
+			l.color = vec3(1);
+			l.intensity = 3;
 			s.resolution = 4096;
 			s.worldSize = vec3(150, 150, 200);
 		}
