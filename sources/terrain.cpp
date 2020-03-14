@@ -176,10 +176,10 @@ namespace
 		switch (Image->channels())
 		{
 		case 2:
-			t->image2d(Image->width(), Image->height(), GL_RG8, GL_RG, GL_UNSIGNED_BYTE, Image->bufferData());
+			t->image2d(Image->width(), Image->height(), GL_RG8, GL_RG, GL_UNSIGNED_BYTE, Image->rawViewU8().data());
 			break;
 		case 3:
-			t->image2d(Image->width(), Image->height(), GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, Image->bufferData());
+			t->image2d(Image->width(), Image->height(), GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, Image->rawViewU8().data());
 			break;
 		}
 		t->filters(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 100);
