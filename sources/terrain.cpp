@@ -4,7 +4,7 @@
 #include <cage-core/assetManager.h>
 #include <cage-core/memoryBuffer.h>
 #include <cage-core/image.h>
-#include <cage-core/collisionMesh.h>
+#include <cage-core/collider.h>
 #include <cage-core/threadPool.h>
 #include <cage-core/debug.h>
 
@@ -66,7 +66,7 @@ namespace
 
 	struct TileBase
 	{
-		Holder<CollisionMesh> cpuCollider;
+		Holder<Collider> cpuCollider;
 		std::vector<Vertex> cpuMesh;
 		Holder<Mesh> gpuMesh;
 		Holder<Texture> gpuAlbedo;
@@ -321,7 +321,7 @@ namespace
 	void generateCollider(Tile &t)
 	{
 		transform m = transform(vec3(t.pos.x, t.pos.y, 0) * tileLength);
-		t.cpuCollider = newCollisionMesh();
+		t.cpuCollider = newCollider();
 		const std::vector<uint32> &ids = meshIndices();
 		uint32 cnt = numeric_cast<uint32>(ids.size() / 3);
 		for (uint32 i = 0; i < cnt; i++)

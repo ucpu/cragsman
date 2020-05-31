@@ -3,7 +3,7 @@
 
 #include <cage-core/entities.h>
 #include <cage-core/geometry.h>
-#include <cage-core/spatial.h>
+#include <cage-core/spatialStructure.h>
 #include <cage-core/hashString.h>
 #include <cage-core/random.h>
 
@@ -17,7 +17,7 @@ namespace
 {
 	const real tileLength = 70; // real world size of a tile (in 1 dimension)
 
-	Holder<SpatialData> spatialSearchData;
+	Holder<SpatialStructure> spatialSearchData;
 	Holder<SpatialQuery> spatialSearchQuery;
 
 	struct Tile
@@ -92,7 +92,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		spatialSearchData = newSpatialData(SpatialDataCreateConfig());
+		spatialSearchData = newSpatialStructure({});
 		spatialSearchQuery = newSpatialQuery(spatialSearchData.get());
 		return false;
 	}

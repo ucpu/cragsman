@@ -133,10 +133,10 @@ namespace
 	template<uint32 N, class T>
 	T ninterpolate(const T v[N], real f) // f is 0..1
 	{
-		CAGE_ASSERT(f >= 0 && f < 1, f, N);
+		CAGE_ASSERT(f >= 0 && f < 1);
 		f *= (N - 1); // 0..(N-1)
 		uint32 i = numeric_cast<uint32>(f);
-		CAGE_ASSERT(i + 1 < N, f, i, N);
+		CAGE_ASSERT(i + 1 < N);
 		return interpolate(v[i], v[i + 1], f - i);
 	}
 

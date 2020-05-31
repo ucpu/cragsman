@@ -11,7 +11,7 @@ Entity *findClinch(const vec3 &pos, real maxDist);
 real terrainOffset(const vec2 &position);
 void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly);
 vec3 terrainIntersection(const line &ln);
-void addTerrainCollider(uint32 name, CollisionMesh *c);
+void addTerrainCollider(uint32 name, Collider *c);
 void removeTerrainCollider(uint32 name);
 real sphereVolume(real radius);
 vec3 colorDeviation(const vec3 &color, real deviation);
