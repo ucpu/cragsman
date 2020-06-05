@@ -7,6 +7,7 @@
 #include <cage-core/collider.h>
 #include <cage-core/threadPool.h>
 #include <cage-core/debug.h>
+#include <cage-core/polyhedron.h>
 
 #include <cage-engine/engine.h>
 #include <cage-engine/graphics.h>
@@ -43,8 +44,7 @@ std::set<TilePos> findNeededTiles(real tileLength, real range)
 namespace
 {
 	const real tileLength = 30; // real world size of a tile (in 1 dimension)
-	const uint32 tileMeshResolution = 40; // number of vertices (in 1 dimension)
-	const uint32 tileTextureResolution = 128; // number of texels (in 1 dimension)
+	const uint32 tileMeshResolution = 60; // number of vertices (in 1 dimension)
 	const real distanceToUnloadTile = 300;
 
 	enum class TileStateEnum
@@ -57,33 +57,32 @@ namespace
 		Ready,
 	};
 
-	struct Vertex
-	{
-		vec3 position;
-		vec3 normal;
-		vec2 uv;
-	};
-
 	struct TileBase
 	{
 		Holder<Collider> cpuCollider;
-		std::vector<Vertex> cpuMesh;
+		Holder<Polyhedron> cpuMesh;
 		Holder<Mesh> gpuMesh;
-		Holder<Texture> gpuAlbedo;
 		Holder<Image> cpuAlbedo;
-		Holder<Texture> gpuMaterial;
-		Holder<Image> cpuMaterial;
+		Holder<Texture> gpuAlbedo;
+		Holder<Image> cpuSpecial;
+		Holder<Texture> gpuSpecial;
 		Holder<RenderObject> renderObject;
 		TilePos pos;
 		Entity *entity = nullptr;
 		uint32 meshName = 0;
 		uint32 albedoName = 0;
-		uint32 materialName = 0;
+		uint32 specialName = 0;
 		uint32 objectName = 0;
+		uint32 textureResolution = 0;
 
 		real distanceToPlayer() const
 		{
 			return pos.distanceToPlayer(tileLength);
+		}
+
+		transform l2w() const
+		{
+			return transform(vec3(pos.x, pos.y, 0) * tileLength);
 		}
 	};
 
@@ -115,7 +114,7 @@ namespace
 			{
 				ass->remove(t.meshName);
 				ass->remove(t.albedoName);
-				ass->remove(t.materialName);
+				ass->remove(t.specialName);
 				ass->remove(t.objectName);
 				removeTerrainCollider(t.objectName);
 				t.entity->destroy();
@@ -170,64 +169,23 @@ namespace
 	// DISPATCH
 	/////////////////////////////////////////////////////////////////////////////
 
-	Holder<Texture> dispatchTexture(Holder<Image> &Image)
+	Holder<Texture> dispatchTexture(Holder<Image> &image)
 	{
 		Holder<Texture> t = newTexture();
-		switch (Image->channels())
-		{
-		case 2:
-			t->image2d(Image->width(), Image->height(), GL_RG8, GL_RG, GL_UNSIGNED_BYTE, Image->rawViewU8().data());
-			break;
-		case 3:
-			t->image2d(Image->width(), Image->height(), GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE, Image->rawViewU8().data());
-			break;
-		}
+		t->importImage(image.get());
 		t->filters(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 100);
 		t->wraps(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 		t->generateMipmaps();
-		Image.clear();
+		image.clear();
 		return t;
 	}
 
-	std::vector<uint32> initializeMeshIndices()
-	{
-		uint32 r = tileMeshResolution;
-		std::vector<uint32> v;
-		v.reserve((r - 1) * (r - 1) * 2 * 3);
-		for (uint32 y = 1; y < r; y++)
-		{
-			for (uint32 x = 1; x < r; x++)
-			{
-				uint32 a = y * r + x;
-				uint32 b = a - r;
-				uint32 c = b - 1;
-				uint32 d = a - 1;
-				v.push_back(d); v.push_back(c); v.push_back(b);
-				v.push_back(d); v.push_back(b); v.push_back(a);
-			}
-		}
-		return v;
-	}
-
-	const std::vector<uint32> &meshIndices()
-	{
-		static const std::vector<uint32> indices = initializeMeshIndices();
-		return indices;
-	}
-
-	Holder<Mesh> dispatchMesh(std::vector<Vertex> &vertices)
+	Holder<Mesh> dispatchMesh(Holder<Polyhedron> &poly)
 	{
 		Holder<Mesh> m = newMesh();
-		MeshHeader::MaterialData material;
-		const std::vector<uint32> &indices = meshIndices();
-		m->setBuffers(numeric_cast<uint32>(vertices.size()), sizeof(Vertex), vertices.data(), numeric_cast<uint32>(indices.size()), indices.data(), sizeof(material), &material);
-		m->setPrimitiveType(GL_TRIANGLES);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_POSITION, 3, GL_FLOAT, sizeof(Vertex), 0);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_NORMAL, 3, GL_FLOAT, sizeof(Vertex), 12);
-		m->setAttribute(CAGE_SHADER_ATTRIB_IN_UV, 2, GL_FLOAT, sizeof(Vertex), 24);
-		real l = tileLength * 0.5;
-		m->setBoundingBox(aabb(vec3(-l, -l, -real::Infinity()), vec3(l, l, real::Infinity())));
-		std::vector<Vertex>().swap(vertices);
+		MeshHeader::MaterialData mat;
+		m->importPolyhedron(poly.get(), { (char*)&mat, (char*)(&mat + 1) });
+		poly.clear();
 		return m;
 	}
 	
@@ -240,20 +198,20 @@ namespace
 			if (t.status == TileStateEnum::Upload)
 			{
 				t.gpuAlbedo = dispatchTexture(t.cpuAlbedo);
-				t.gpuMaterial = dispatchTexture(t.cpuMaterial);
+				t.gpuSpecial = dispatchTexture(t.cpuSpecial);
 				t.gpuMesh = dispatchMesh(t.cpuMesh);
 
 				{ // set texture names for the mesh
 					uint32 textures[MaxTexturesCountPerMaterial];
 					detail::memset(textures, 0, sizeof(textures));
 					textures[0] = t.albedoName;
-					textures[1] = t.materialName;
+					textures[1] = t.specialName;
 					t.gpuMesh->setTextureNames(textures);
 				}
 
 				// transfer asset ownership
 				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, templates::move(t.gpuAlbedo), stringizer() + "albedo " + t.pos);
-				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.materialName, templates::move(t.gpuMaterial), stringizer() + "material " + t.pos);
+				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, templates::move(t.gpuSpecial), stringizer() + "special " + t.pos);
 				ass->fabricate<AssetSchemeIndexMesh, Mesh>(t.meshName, templates::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
 				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, templates::move(t.renderObject), stringizer() + "object " + t.pos);
 
@@ -294,71 +252,111 @@ namespace
 		return result;
 	}
 
+	std::vector<uint32> initializeMeshIndices()
+	{
+		uint32 r = tileMeshResolution;
+		std::vector<uint32> v;
+		v.reserve((r - 1) * (r - 1) * 2 * 3);
+		for (uint32 y = 1; y < r; y++)
+		{
+			for (uint32 x = 1; x < r; x++)
+			{
+				uint32 a = y * r + x;
+				uint32 b = a - r;
+				uint32 c = b - 1;
+				uint32 d = a - 1;
+				v.push_back(d); v.push_back(c); v.push_back(b);
+				v.push_back(d); v.push_back(b); v.push_back(a);
+			}
+		}
+		return v;
+	}
+
+	const std::vector<uint32> &meshIndices()
+	{
+		static const std::vector<uint32> indices = initializeMeshIndices();
+		return indices;
+	}
+
 	void generateMesh(Tile &t)
 	{
 		static const real pwoa = tileLength / (tileMeshResolution - 1);
 		static const vec2 pwox = vec2(pwoa, 0);
 		static const vec2 pwoy = vec2(0, pwoa);
-		t.cpuMesh.reserve(tileMeshResolution * tileMeshResolution);
+		std::vector<vec3> positions, normals;
+		positions.reserve(tileMeshResolution * tileMeshResolution);
+		normals.reserve(tileMeshResolution * tileMeshResolution);
+		transform l2w = t.l2w();
 		for (uint32 y = 0; y < tileMeshResolution; y++)
 		{
 			for (uint32 x = 0; x < tileMeshResolution; x++)
 			{
-				Vertex v;
-				v.uv[0] = real(x) / (tileMeshResolution - 1);
-				v.uv[1] = real(y) / (tileMeshResolution - 1);
-				vec2 pt = (v.uv - 0.5) * tileLength;
-				vec2 pw = vec2(t.pos.x, t.pos.y) * tileLength + pt;
-				v.position = vec3(pt, terrainOffset(pw));
-				real tox = terrainOffset(pw + pwox) - v.position[2];
-				real toy = terrainOffset(pw + pwoy) - v.position[2];
-				v.normal = normalize(vec3(-tox, -toy, 0.1));
-				t.cpuMesh.push_back(v);
+				vec2 pt = (vec2(x, y) - 2) * tileLength / (tileMeshResolution - 5);
+				vec2 pw = vec2(l2w * vec3(pt, 0));
+				real z = terrainOffset(pw);
+				positions.push_back(vec3(pt, z));
+				real tox = terrainOffset(pw + pwox) - z;
+				real toy = terrainOffset(pw + pwoy) - z;
+				normals.push_back(normalize(vec3(-tox, -toy, 0.1)));
 			}
 		}
+		t.cpuMesh = newPolyhedron();
+		t.cpuMesh->positions(positions);
+		t.cpuMesh->normals(normals);
+		t.cpuMesh->indices(meshIndices());
+		{
+			PolyhedronSimplificationConfig cfg;
+			cfg.minEdgeLength = 0.25;
+			cfg.maxEdgeLength = 3;
+			cfg.approximateError = 0.1;
+			t.cpuMesh->simplify(cfg);
+		}
+		{
+			PolyhedronUnwrapConfig cfg;
+			cfg.texelsPerUnit = 3;
+			t.textureResolution = t.cpuMesh->unwrap(cfg);
+		}
+
+		//auto msh = t.cpuMesh->copy();
+		//msh->applyTransform(t.l2w());
+		//msh->exportObjFile({}, stringizer() + "debug/" + t.pos + ".obj");
 	}
 
 	void generateCollider(Tile &t)
 	{
-		transform m = transform(vec3(t.pos.x, t.pos.y, 0) * tileLength);
+		Holder<Polyhedron> p = t.cpuMesh->copy();
+		p->applyTransform(t.l2w());
 		t.cpuCollider = newCollider();
-		const std::vector<uint32> &ids = meshIndices();
-		uint32 cnt = numeric_cast<uint32>(ids.size() / 3);
-		for (uint32 i = 0; i < cnt; i++)
-		{
-			triangle tr(
-				t.cpuMesh[ids[i * 3 + 0]].position,
-				t.cpuMesh[ids[i * 3 + 1]].position,
-				t.cpuMesh[ids[i * 3 + 2]].position
-			);
-			t.cpuCollider->addTriangle(tr * m);
-		}
+		t.cpuCollider->importPolyhedron(p.get());
 		t.cpuCollider->rebuild();
 	}
 
-	void initializeTexture(Holder<Image> &img, uint32 components)
+	void textureGenerator(Tile *t, uint32 x, uint32 y, const ivec3 &idx, const vec3 &weights)
 	{
-		img = newImage();
-		img->empty(tileTextureResolution, tileTextureResolution, components);
+		vec3 p = t->cpuMesh->positionAt(idx, weights) * t->l2w();
+		vec3 color; real roughness; real metallic;
+		terrainMaterial(vec2(p), color, roughness, metallic, false);
+		t->cpuAlbedo->set(x, y, color);
+		t->cpuSpecial->set(x, y, vec2(roughness, metallic));
 	}
 
 	void generateTextures(Tile &t)
 	{
-		initializeTexture(t.cpuAlbedo, 3);
-		initializeTexture(t.cpuMaterial, 2);
-		for (uint32 y = 0; y < tileTextureResolution; y++)
-		{
-			for (uint32 x = 0; x < tileTextureResolution; x++)
-			{
-				vec2 pw = (vec2(t.pos.x, t.pos.y) + (vec2(x, y) + 0.5) / tileTextureResolution - 0.5) * tileLength;
-				vec3 color; real roughness; real metallic;
-				terrainMaterial(pw, color, roughness, metallic, false);
-				for (uint32 i = 0; i < 3; i++)
-					t.cpuAlbedo->value(x, y, i, color[i].value);
-				t.cpuMaterial->value(x, y, 0, roughness.value);
-				t.cpuMaterial->value(x, y, 1, metallic.value);
-			}
-		}
+		t.cpuAlbedo = newImage();
+		t.cpuAlbedo->initialize(t.textureResolution, t.textureResolution, 3);
+		t.cpuSpecial = newImage();
+		t.cpuSpecial->initialize(t.textureResolution, t.textureResolution, 2);
+		PolyhedronTextureGenerationConfig cfg;
+		cfg.generator.bind<Tile *, &textureGenerator>(&t);
+		cfg.width = cfg.height = t.textureResolution;
+		t.cpuMesh->generateTexture(cfg);
+		t.cpuAlbedo->inpaint(2);
+		t.cpuSpecial->inpaint(2);
+		t.cpuSpecial->colorConfig.gammaSpace = GammaSpaceEnum::Linear;
+
+		//auto tex = t.cpuAlbedo->copy();
+		//tex->verticalFlip();
+		//tex->exportFile(stringizer() + "debug/" + t.pos + ".png");
 	}
 
 	void generateRenderObject(Tile &t)
@@ -384,7 +382,7 @@ namespace
 
 			// assets names
 			t->albedoName = ass->generateUniqueName();
-			t->materialName = ass->generateUniqueName();
+			t->specialName = ass->generateUniqueName();
 			t->meshName = ass->generateUniqueName();
 			t->objectName = ass->generateUniqueName();
 
