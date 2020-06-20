@@ -5,6 +5,8 @@
 #include <cage-core/color.h>
 #include <cage-core/random.h>
 
+#include <array>
+
 namespace
 {
 	const uint32 globalSeed = (uint32)detail::getApplicationRandomGenerator().next();
@@ -310,18 +312,75 @@ namespace
 
 		darkRockGeneral(pos, color, roughness, metallic, colors, sizeof(colors) / sizeof(colors[0]));
 	}
+
+	void basesSwitch(uint32 baseIndex, const vec2 &pos, vec3 &color, real &roughness, real &metallic)
+	{
+		switch (baseIndex)
+		{
+		case 0: basePaper(pos, color, roughness, metallic); break;
+		case 1: baseSphinx(pos, color, roughness, metallic); break;
+		case 2: baseWhite(pos, color, roughness, metallic); break;
+		case 3: baseDarkRock1(pos, color, roughness, metallic); break;
+		case 4: baseDarkRock2(pos, color, roughness, metallic); break;
+		default: CAGE_THROW_CRITICAL(NotImplemented, "unknown terrain base color enum");
+		}
+	}
+
+	std::array<real, 5> basesWeights(const vec2 &pos)
+	{
+		static Holder<NoiseFunction> clouds1 = newClouds(globalSeed + 987);
+		static Holder<NoiseFunction> clouds2 = newClouds(globalSeed + 986);
+		static Holder<NoiseFunction> clouds3 = newClouds(globalSeed + 985);
+		static Holder<NoiseFunction> clouds4 = newClouds(globalSeed + 984);
+		static Holder<NoiseFunction> clouds5 = newClouds(globalSeed + 983);
+		const vec2 p = pos * 0.01;
+		std::array<real, 5> result;
+		result[0] = clouds1->evaluate(p);
+		result[1] = clouds2->evaluate(p);
+		result[2] = clouds3->evaluate(p);
+		result[3] = clouds4->evaluate(p);
+		result[4] = clouds5->evaluate(p);
+		return result;
+	}
+
+	struct WeightIndex
+	{
+		real weight;
+		uint32 index = m;
+	};
 }
 
 void terrainMaterial(const vec2 &pos, vec3 &color, real &roughness, real &metallic, bool rockOnly)
 {
-	switch (globalSeed % 5)
-	{
-	case 0: basePaper(pos, color, roughness, metallic); break;
-	case 1: baseSphinx(pos, color, roughness, metallic); break;
-	case 2: baseWhite(pos, color, roughness, metallic); break;
-	case 3: baseDarkRock1(pos, color, roughness, metallic); break;
-	case 4: baseDarkRock2(pos, color, roughness, metallic); break;
-	default: CAGE_THROW_CRITICAL(NotImplemented, "unknown terrain base color enum");
+	{ // base
+		std::array<real, 5> weights5 = basesWeights(pos);
+		std::array<WeightIndex, 5> indices5;
+		for (uint32 i = 0; i < 5; i++)
+		{
+			indices5[i].index = i;
+			indices5[i].weight = weights5[i] + 1;
+		}
+		std::sort(std::begin(indices5), std::end(indices5), [](const WeightIndex &a, const WeightIndex &b) {
+			return a.weight > b.weight;
+		});
+		{ // normalize
+			real l;
+			for (uint32 i = 0; i < 5; i++)
+				l += sqr(indices5[i].weight);
+			l = 1 / sqrt(l);
+			for (uint32 i = 0; i < 5; i++)
+				indices5[i].weight *= l;
+		}
+		vec2 w2 = normalize(vec2(indices5[0].weight, indices5[1].weight));
+		CAGE_ASSERT(w2[0] >= w2[1]);
+		real d = w2[0] - w2[1];
+		real f = clamp(rerange(d, 0, 0.1, 0.5, 0), 0, 0.5);
+		vec3 c[2]; real r[2]; real m[2];
+		for (uint32 i = 0; i < 2; i++)
+			basesSwitch(indices5[i].index, pos, c[i], r[i], m[i]);
+		color = interpolate(c[0], c[1], f);
+		roughness = interpolate(r[0], r[1], f);
+		metallic = interpolate(m[0], m[1], f);
 	}
 
 	{ // small cracks
