@@ -362,10 +362,10 @@ namespace
 	void generateRenderObject(Tile &t)
 	{
 		t.renderObject = newRenderObject();
-		float thresholds[1] = { 0 };
+		real thresholds[1] = { 0 };
 		uint32 meshIndices[2] = { 0, 1 };
 		uint32 meshNames[1] = { t.meshName };
-		t.renderObject->setLods(1, 1, thresholds, meshIndices, meshNames);
+		t.renderObject->setLods(thresholds, meshIndices, meshNames);
 	}
 
 	void generatorEntry()

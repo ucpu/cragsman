@@ -136,8 +136,7 @@ namespace
 				if (!p.collisionRadius.valid())
 					continue;
 				CAGE_COMPONENT_ENGINE(Transform, t, e);
-				collisionSearchQuery->query(sphere(t.position, p.collisionRadius));
-				if (collisionSearchQuery->name())
+				if (collisionSearchQuery->query(sphere(t.position, p.collisionRadius)))
 				{
 					const Collider *c = nullptr;
 					transform dummy;
@@ -244,8 +243,7 @@ void removeTerrainCollider(uint32 name)
 vec3 terrainIntersection(const line &ln)
 {
 	CAGE_ASSERT(ln.normalized());
-	collisionSearchQuery->query(ln);
-	if (!collisionSearchQuery->name())
+	if (!collisionSearchQuery->query(ln))
 	{
 		// use old, less accurate method
 		real dst = ln.a()[2] / dot(ln.direction, vec3(0, 0, -1));
