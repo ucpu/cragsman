@@ -309,12 +309,12 @@ namespace
 			cfg.minEdgeLength = 0.25;
 			cfg.maxEdgeLength = 3;
 			cfg.approximateError = 0.1;
-			t.cpuMesh->simplify(cfg);
+			polyhedronSimplify(+t.cpuMesh, cfg);
 		}
 		{
 			PolyhedronUnwrapConfig cfg;
 			cfg.texelsPerUnit = 3;
-			t.textureResolution = t.cpuMesh->unwrap(cfg);
+			t.textureResolution = polyhedronUnwrap(+t.cpuMesh, cfg);
 		}
 
 		//auto msh = t.cpuMesh->copy();
@@ -325,7 +325,7 @@ namespace
 	void generateCollider(Tile &t)
 	{
 		Holder<Polyhedron> p = t.cpuMesh->copy();
-		p->applyTransform(t.l2w());
+		polyhedronApplyTransform(+p, t.l2w());
 		t.cpuCollider = newCollider();
 		t.cpuCollider->importPolyhedron(p.get());
 		t.cpuCollider->rebuild();
@@ -349,9 +349,9 @@ namespace
 		PolyhedronTextureGenerationConfig cfg;
 		cfg.generator.bind<Tile *, &textureGenerator>(&t);
 		cfg.width = cfg.height = t.textureResolution;
-		t.cpuMesh->generateTexture(cfg);
-		t.cpuAlbedo->inpaint(2);
-		t.cpuSpecial->inpaint(2);
+		polyhedronGenerateTexture(+t.cpuMesh, cfg);
+		imageDilation(+t.cpuAlbedo, 2);
+		imageDilation(+t.cpuSpecial, 2);
 		t.cpuSpecial->colorConfig.gammaSpace = GammaSpaceEnum::Linear;
 
 		//auto tex = t.cpuAlbedo->copy();
