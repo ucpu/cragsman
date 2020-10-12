@@ -1,9 +1,11 @@
 
 [base]
-mask = 1
 roughness = 0.5
 metallic = 0.1
 emission = 1
+
+[mult]
+mask = 0
 
 [flags]
 noLighting

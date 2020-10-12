@@ -145,8 +145,7 @@ namespace
 			c.ambientIntensity = 0.03;
 			c.near = 10;
 			c.far = 500;
-			c.effects = CameraEffectsFlags::CombinedPass;
-			//c.effects = CameraEffectsFlags::GammaCorrection;
+			c.effects = CameraEffectsFlags::Default;
 		}
 
 		{ // light
