@@ -33,20 +33,18 @@ namespace
 		return newClouds(0);
 	}
 
-	Holder<NoiseFunction> newCell(NoiseOperationEnum operation = NoiseOperationEnum::Distance, NoiseDistanceEnum distance = NoiseDistanceEnum::Euclidean, uint32 index0 = 0, uint32 index1 = 1)
+	Holder<NoiseFunction> newCell(NoiseOperationEnum operation = NoiseOperationEnum::Distance, NoiseDistanceEnum distance = NoiseDistanceEnum::Euclidean)
 	{
 		NoiseFunctionCreateConfig cfg;
 		cfg.seed = newSeed();
 		cfg.type = NoiseTypeEnum::Cellular;
 		cfg.operation = operation;
 		cfg.distance = distance;
-		cfg.index0 = index0;
-		cfg.index1 = index1;
 		return newNoiseFunction(cfg);
 	}
 
 	template<class T>
-	real evaluateCell(Holder<NoiseFunction> &noiseFunction, const T &position)
+	real evaluateOrig(Holder<NoiseFunction> &noiseFunction, const T &position)
 	{
 		return noiseFunction->evaluate(position);
 	}
@@ -124,11 +122,11 @@ namespace
 		static Holder<NoiseFunction> clouds3 = newClouds(5);
 		static Holder<NoiseFunction> clouds4 = newClouds(3);
 		static Holder<NoiseFunction> clouds5 = newClouds(3);
-		static Holder<NoiseFunction> cell1 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
-		static Holder<NoiseFunction> cell2 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
-		static Holder<NoiseFunction> cell3 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
+		static Holder<NoiseFunction> cell1 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
+		static Holder<NoiseFunction> cell2 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
+		static Holder<NoiseFunction> cell3 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
 
-		vec3 off = vec3(evaluateCell(cell1, pos * 0.063), evaluateCell(cell2, pos * 0.063), evaluateCell(cell3, pos * 0.063));
+		vec3 off = vec3(evaluateClamp(cell1, pos * 0.063), evaluateClamp(cell2, pos * 0.063), evaluateClamp(cell3, pos * 0.063));
 		if (evaluateClamp(clouds4, pos * 0.097 + off * 2.2) < 0.6)
 		{ // rock 1
 			color = colorHsvToRgb(vec3(
@@ -217,7 +215,7 @@ namespace
 		static Holder<NoiseFunction> value1 = newValue();
 
 		vec3 off = vec3(evaluateClamp(clouds1, pos * 0.043), evaluateClamp(clouds2, pos * 0.043), evaluateClamp(clouds3, pos * 0.043));
-		real f = evaluateCell(cell1, pos * 0.0147 + off * 0.23);
+		real f = evaluateClamp(cell1, pos * 0.0147 + off * 0.23);
 		real m = evaluateClamp(clouds4, pos * 0.018);
 		if (f < 0.017 && m < 0.35)
 		{ // the vein
@@ -330,8 +328,8 @@ real terrainOffset(const vec2 &pos)
 	}
 
 	{ // extra saliences
-		real a = evaluateCell(cell1, pos * 0.0241);
-		real b = evaluateCell(clouds3, pos * 0.041);
+		real a = evaluateClamp(cell1, pos * 0.0241);
+		real b = evaluateOrig(clouds3, pos * 0.041);
 		result += sharpEdge(a + b - 0.4);
 	}
 
@@ -340,7 +338,7 @@ real terrainOffset(const vec2 &pos)
 		real rot = evaluateClamp(clouds5, pos * 0.00398);
 		vec2 off = vec2(rot + 0.5, 1.5 - rot);
 		real mask = evaluateClamp(clouds6, pos * 0.00654);
-		real a = evaluateCell(cell2, (pos * 0.01 + off) * (scl + 0.5));
+		real a = evaluateClamp(cell2, (pos * 0.01 + off) * (scl + 0.5));
 		result += pow((min(a + 0.95, 1) - 0.95) * 20, 3) * sharpEdge(mask - 0.1) * 0.5;
 	}
 
@@ -370,9 +368,9 @@ void terrainMaterial(const vec2 &pos2, vec3 &color, real &roughness, real &metal
 	static Holder<NoiseFunction> clouds6 = newClouds(3);
 	static Holder<NoiseFunction> cell1 = newCell(NoiseOperationEnum::Subtract);
 	static Holder<NoiseFunction> cell2 = newCell();
-	static Holder<NoiseFunction> cell3 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
-	static Holder<NoiseFunction> cell4 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
-	static Holder<NoiseFunction> cell5 = newCell(NoiseOperationEnum::Distance, NoiseDistanceEnum::Euclidean, 1);
+	static Holder<NoiseFunction> cell3 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
+	static Holder<NoiseFunction> cell4 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
+	static Holder<NoiseFunction> cell5 = newCell(NoiseOperationEnum::Distance2, NoiseDistanceEnum::Euclidean);
 	static Holder<NoiseFunction> cell6 = newCell(NoiseOperationEnum::Subtract);
 	static Holder<NoiseFunction> value1 = newValue();
 	static Holder<NoiseFunction> value2 = newValue();
@@ -412,7 +410,7 @@ void terrainMaterial(const vec2 &pos2, vec3 &color, real &roughness, real &metal
 	}
 
 	{ // small cracks
-		real f = evaluateCell(cell1, pos * 0.187);
+		real f = evaluateClamp(cell1, pos * 0.187);
 		real m = evaluateClamp(clouds1, pos * 0.43);
 		if (f < 0.02 && m < 0.5)
 		{
@@ -422,7 +420,7 @@ void terrainMaterial(const vec2 &pos2, vec3 &color, real &roughness, real &metal
 	}
 
 	{ // white glistering spots
-		if (evaluateCell(cell2, pos * 0.084) > 0.95)
+		if (evaluateClamp(cell2, pos * 0.084) > 0.95)
 		{
 			real c = evaluateClamp(clouds2, pos * 3) * 0.2 + 0.8;
 			color = vec3(c);
@@ -435,8 +433,8 @@ void terrainMaterial(const vec2 &pos2, vec3 &color, real &roughness, real &metal
 		return;
 
 	{ // large cracks
-		vec3 off = vec3(evaluateCell(cell3, pos * 0.1), evaluateCell(cell4, pos * 0.1), evaluateCell(cell5, pos * 0.1));
-		real f = evaluateCell(cell6, pos * 0.034 + off * 0.23);
+		vec3 off = vec3(evaluateClamp(cell3, pos * 0.1), evaluateClamp(cell4, pos * 0.1), evaluateClamp(cell5, pos * 0.1));
+		real f = evaluateClamp(cell6, pos * 0.034 + off * 0.23);
 		real m = evaluateClamp(clouds3, pos * 0.023);
 		if (f < 0.015 && m < 0.4)
 		{

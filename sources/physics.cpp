@@ -120,8 +120,7 @@ namespace
 
 			vec3 tp = closestPoint(tr, t.position);
 			real penetration = -(distance(t.position, tp) - p.collisionRadius);
-			CAGE_ASSERT(penetration > 0);
-			penetration = min(penetration, 1);
+			penetration = clamp(penetration, 0, 1);
 			vec3 dir = normalize(t.position - tp);
 			vec3 depenetration = dir * (pow(penetration + 1, 3) - 1);
 

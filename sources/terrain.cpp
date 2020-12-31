@@ -43,9 +43,9 @@ std::set<TilePos> findNeededTiles(real tileLength, real range)
 
 namespace
 {
-	const real tileLength = 30; // real world size of a tile (in 1 dimension)
-	const uint32 tileMeshResolution = 60; // number of vertices (in 1 dimension)
-	const real distanceToUnloadTile = 300;
+	constexpr real tileLength = 30; // real world size of a tile (in 1 dimension)
+	constexpr uint32 tileMeshResolution = 60; // number of vertices (in 1 dimension)
+	constexpr real distanceToUnloadTile = 300;
 
 	enum class TileStateEnum
 	{
@@ -254,7 +254,7 @@ namespace
 
 	std::vector<uint32> initializeMeshIndices()
 	{
-		uint32 r = tileMeshResolution;
+		constexpr uint32 r = tileMeshResolution;
 		std::vector<uint32> v;
 		v.reserve((r - 1) * (r - 1) * 2 * 3);
 		for (uint32 y = 1; y < r; y++)
@@ -280,9 +280,9 @@ namespace
 
 	void generateMesh(Tile &t)
 	{
-		static const real pwoa = tileLength / (tileMeshResolution - 1);
-		static const vec2 pwox = vec2(pwoa, 0);
-		static const vec2 pwoy = vec2(0, pwoa);
+		constexpr real pwoa = tileLength / (tileMeshResolution - 1);
+		constexpr vec2 pwox = vec2(pwoa, 0);
+		constexpr vec2 pwoy = vec2(0, pwoa);
 		std::vector<vec3> positions, normals;
 		positions.reserve(tileMeshResolution * tileMeshResolution);
 		normals.reserve(tileMeshResolution * tileMeshResolution);
