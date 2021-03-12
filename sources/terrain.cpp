@@ -88,7 +88,7 @@ namespace
 
 	struct Tile : public TileBase
 	{
-		std::atomic<TileStateEnum> status{ TileStateEnum::Init };
+		std::atomic<TileStateEnum> status = TileStateEnum::Init;
 	};
 
 	std::vector<Holder<Thread>> generatorThreads;
