@@ -7,7 +7,7 @@
 #include <cage-core/collider.h>
 #include <cage-core/threadPool.h>
 #include <cage-core/debug.h>
-#include <cage-core/polyhedron.h>
+#include <cage-core/mesh.h>
 
 #include <cage-engine/engine.h>
 #include <cage-engine/graphics.h>
@@ -60,8 +60,8 @@ namespace
 	struct TileBase
 	{
 		Holder<Collider> cpuCollider;
-		Holder<Polyhedron> cpuMesh;
-		Holder<Mesh> gpuMesh;
+		Holder<Mesh> cpuMesh;
+		Holder<Model> gpuMesh;
 		Holder<Image> cpuAlbedo;
 		Holder<Texture> gpuAlbedo;
 		Holder<Image> cpuSpecial;
@@ -180,11 +180,11 @@ namespace
 		return t;
 	}
 
-	Holder<Mesh> dispatchMesh(Holder<Polyhedron> &poly)
+	Holder<Model> dispatchMesh(Holder<Mesh> &poly)
 	{
-		Holder<Mesh> m = newMesh();
-		MeshHeader::MaterialData mat;
-		m->importPolyhedron(poly.get(), { (char*)&mat, (char*)(&mat + 1) });
+		Holder<Model> m = newModel();
+		ModelHeader::MaterialData mat;
+		m->importMesh(+poly, { (char*)&mat, (char*)(&mat + 1) });
 		poly.clear();
 		return m;
 	}
@@ -212,7 +212,7 @@ namespace
 				// transfer asset ownership
 				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, templates::move(t.gpuAlbedo), stringizer() + "albedo " + t.pos);
 				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, templates::move(t.gpuSpecial), stringizer() + "special " + t.pos);
-				ass->fabricate<AssetSchemeIndexMesh, Mesh>(t.meshName, templates::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
+				ass->fabricate<AssetSchemeIndexModel, Model>(t.meshName, templates::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
 				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, templates::move(t.renderObject), stringizer() + "object " + t.pos);
 
 				t.status = TileStateEnum::Entity;
@@ -300,21 +300,21 @@ namespace
 				normals.push_back(normalize(vec3(-tox, -toy, 0.1)));
 			}
 		}
-		t.cpuMesh = newPolyhedron();
+		t.cpuMesh = newMesh();
 		t.cpuMesh->positions(positions);
 		t.cpuMesh->normals(normals);
 		t.cpuMesh->indices(meshIndices());
 		{
-			PolyhedronSimplificationConfig cfg;
+			MeshSimplificationConfig cfg;
 			cfg.minEdgeLength = 0.25;
 			cfg.maxEdgeLength = 3;
 			cfg.approximateError = 0.1;
-			polyhedronSimplify(+t.cpuMesh, cfg);
+			meshSimplify(+t.cpuMesh, cfg);
 		}
 		{
-			PolyhedronUnwrapConfig cfg;
+			MeshUnwrapConfig cfg;
 			cfg.texelsPerUnit = 3;
-			t.textureResolution = polyhedronUnwrap(+t.cpuMesh, cfg);
+			t.textureResolution = meshUnwrap(+t.cpuMesh, cfg);
 		}
 
 		//auto msh = t.cpuMesh->copy();
@@ -324,10 +324,10 @@ namespace
 
 	void generateCollider(Tile &t)
 	{
-		Holder<Polyhedron> p = t.cpuMesh->copy();
-		polyhedronApplyTransform(+p, t.l2w());
+		Holder<Mesh> p = t.cpuMesh->copy();
+		meshApplyTransform(+p, t.l2w());
 		t.cpuCollider = newCollider();
-		t.cpuCollider->importPolyhedron(p.get());
+		t.cpuCollider->importMesh(+p);
 		t.cpuCollider->rebuild();
 	}
 
@@ -346,10 +346,10 @@ namespace
 		t.cpuAlbedo->initialize(t.textureResolution, t.textureResolution, 3);
 		t.cpuSpecial = newImage();
 		t.cpuSpecial->initialize(t.textureResolution, t.textureResolution, 2);
-		PolyhedronTextureGenerationConfig cfg;
+		MeshTextureGenerationConfig cfg;
 		cfg.generator.bind<Tile *, &textureGenerator>(&t);
 		cfg.width = cfg.height = t.textureResolution;
-		polyhedronGenerateTexture(+t.cpuMesh, cfg);
+		meshGenerateTexture(+t.cpuMesh, cfg);
 		imageDilation(+t.cpuAlbedo, 2);
 		imageDilation(+t.cpuSpecial, 2);
 		t.cpuSpecial->colorConfig.gammaSpace = GammaSpaceEnum::Linear;

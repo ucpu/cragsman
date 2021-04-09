@@ -4,7 +4,7 @@ scheme = pack
 character.pack
 
 []
-scheme = mesh
+scheme = model
 uvs = false
 body.blend
 shoulder.blend

@@ -4,7 +4,7 @@ scheme = pack
 clinch.pack
 
 []
-scheme = mesh
+scheme = model
 uvs = false
 
 clinch.blend
