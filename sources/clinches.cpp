@@ -81,7 +81,7 @@ namespace
 					for (Entity *e : t.clinches)
 					{
 						CAGE_COMPONENT_ENGINE(Transform, tr, e);
-						spatialSearchData->update(e->name(), sphere(tr.position, 1));
+						spatialSearchData->update(e->name(), Sphere(tr.position, 1));
 					}
 				}
 				spatialSearchData->rebuild();
@@ -114,7 +114,7 @@ namespace
 
 void findInitialClinches(uint32 &count, Entity **result)
 {
-	spatialSearchQuery->intersection(aabb::Universe());
+	spatialSearchQuery->intersection(Aabb::Universe());
 	auto res = spatialSearchQuery->result();
 	if (res.size() < count)
 	{
@@ -134,7 +134,7 @@ void findInitialClinches(uint32 &count, Entity **result)
 
 Entity *findClinch(const vec3 &pos, real maxDist)
 {
-	spatialSearchQuery->intersection(sphere(pos, maxDist));
+	spatialSearchQuery->intersection(Sphere(pos, maxDist));
 	auto res = spatialSearchQuery->result();
 	if (!res.size())
 		return nullptr;

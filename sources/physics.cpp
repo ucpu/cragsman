@@ -113,7 +113,7 @@ namespace
 			}
 		}
 
-		vec3 collisionResponse(const transform &t, const PhysicsComponent &p, const triangle &tr)
+		vec3 collisionResponse(const transform &t, const PhysicsComponent &p, const Triangle &tr)
 		{
 			vec3 n = tr.normal();
 			vec3 bounce = -2 * n * dot(n, p.velocity);
@@ -135,7 +135,7 @@ namespace
 				if (!p.collisionRadius.valid())
 					continue;
 				CAGE_COMPONENT_ENGINE(Transform, t, e);
-				if (collisionSearchQuery->query(sphere(t.position, p.collisionRadius)))
+				if (collisionSearchQuery->query(Sphere(t.position, p.collisionRadius)))
 				{
 					const Collider *c = nullptr;
 					transform dummy;
@@ -143,7 +143,7 @@ namespace
 					CAGE_ASSERT(dummy == transform());
 					for (auto cp : collisionSearchQuery->collisionPairs())
 					{
-						const triangle &tr = c->triangles()[cp.b];
+						const Triangle &tr = c->triangles()[cp.b];
 						addForce(e, collisionResponse(t, p, tr));
 					}
 				}
@@ -239,7 +239,7 @@ void removeTerrainCollider(uint32 name)
 	collisionSearchData->rebuild();
 }
 
-vec3 terrainIntersection(const line &ln)
+vec3 terrainIntersection(const Line &ln)
 {
 	CAGE_ASSERT(ln.normalized());
 	if (!collisionSearchQuery->query(ln))
@@ -253,6 +253,6 @@ vec3 terrainIntersection(const line &ln)
 	const Collider *c = nullptr;
 	transform dummy;
 	collisionSearchQuery->collider(c, dummy);
-	const triangle &t = c->triangles()[collisionSearchQuery->collisionPairs()[0].b];
+	const Triangle &t = c->triangles()[collisionSearchQuery->collisionPairs()[0].b];
 	return intersection(ln, t);
 }
