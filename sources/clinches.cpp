@@ -68,7 +68,7 @@ namespace
 				Tile t;
 				t.pos = n;
 				generateClinches(t);
-				tiles.push_back(templates::move(t));
+				tiles.push_back(std::move(t));
 				changes = true;
 			}
 		}

@@ -115,8 +115,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		SpringVisualComponent::component = engineEntities()->defineComponent(SpringVisualComponent(), true);
-		TimeoutComponent::component = engineEntities()->defineComponent(TimeoutComponent(), true);
+		SpringVisualComponent::component = engineEntities()->defineComponent(SpringVisualComponent());
+		TimeoutComponent::component = engineEntities()->defineComponent(TimeoutComponent());
 		return false;
 	}
 

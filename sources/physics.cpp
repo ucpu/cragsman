@@ -203,8 +203,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		PhysicsComponent::component = engineEntities()->defineComponent(PhysicsComponent(), true);
-		SpringComponent::component = engineEntities()->defineComponent(SpringComponent(), true);
+		PhysicsComponent::component = engineEntities()->defineComponent(PhysicsComponent());
+		SpringComponent::component = engineEntities()->defineComponent(SpringComponent());
 		return false;
 	}
 

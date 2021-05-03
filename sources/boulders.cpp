@@ -62,7 +62,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		BoulderComponent::component = engineEntities()->defineComponent(BoulderComponent(), true);
+		BoulderComponent::component = engineEntities()->defineComponent(BoulderComponent());
 		return false;
 	}
 

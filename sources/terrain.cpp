@@ -210,10 +210,10 @@ namespace
 				}
 
 				// transfer asset ownership
-				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, templates::move(t.gpuAlbedo), stringizer() + "albedo " + t.pos);
-				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, templates::move(t.gpuSpecial), stringizer() + "special " + t.pos);
-				ass->fabricate<AssetSchemeIndexModel, Model>(t.meshName, templates::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
-				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, templates::move(t.renderObject), stringizer() + "object " + t.pos);
+				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, std::move(t.gpuAlbedo), stringizer() + "albedo " + t.pos);
+				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, std::move(t.gpuSpecial), stringizer() + "special " + t.pos);
+				ass->fabricate<AssetSchemeIndexModel, Model>(t.meshName, std::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
+				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, std::move(t.renderObject), stringizer() + "object " + t.pos);
 
 				t.status = TileStateEnum::Entity;
 				break;
@@ -305,7 +305,7 @@ namespace
 		t.cpuMesh->normals(normals);
 		t.cpuMesh->indices(meshIndices());
 		{
-			MeshSimplificationConfig cfg;
+			MeshSimplifyConfig cfg;
 			cfg.minEdgeLength = 0.25;
 			cfg.maxEdgeLength = 3;
 			cfg.approximateError = 0.1;
@@ -346,7 +346,7 @@ namespace
 		t.cpuAlbedo->initialize(t.textureResolution, t.textureResolution, 3);
 		t.cpuSpecial = newImage();
 		t.cpuSpecial->initialize(t.textureResolution, t.textureResolution, 2);
-		MeshTextureGenerationConfig cfg;
+		MeshGenerateTextureConfig cfg;
 		cfg.generator.bind<Tile *, &textureGenerator>(&t);
 		cfg.width = cfg.height = t.textureResolution;
 		meshGenerateTexture(+t.cpuMesh, cfg);
