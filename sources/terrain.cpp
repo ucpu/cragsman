@@ -126,7 +126,7 @@ namespace
 			else if (t.status == TileStateEnum::Entity)
 			{
 				// register the collider
-				addTerrainCollider(t.objectName, t.cpuCollider.get());
+				addTerrainCollider(t.objectName, t.cpuCollider.share());
 
 				{ // create the entity
 					t.entity = engineEntities()->createAnonymous();

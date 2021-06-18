@@ -93,7 +93,7 @@ namespace
 	bool engineInitialize()
 	{
 		spatialSearchData = newSpatialStructure({});
-		spatialSearchQuery = newSpatialQuery(spatialSearchData.get());
+		spatialSearchQuery = newSpatialQuery(spatialSearchData.share());
 		return false;
 	}
 

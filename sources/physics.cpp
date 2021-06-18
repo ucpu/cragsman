@@ -137,7 +137,7 @@ namespace
 				CAGE_COMPONENT_ENGINE(Transform, t, e);
 				if (collisionSearchQuery->query(Sphere(t.position, p.collisionRadius)))
 				{
-					const Collider *c = nullptr;
+					Holder<const Collider> c;
 					transform dummy;
 					collisionSearchQuery->collider(c, dummy);
 					CAGE_ASSERT(dummy == transform());
@@ -221,15 +221,15 @@ namespace
 			engineUpdateListener.bind<&engineUpdate>();
 			{
 				collisionSearchData = newCollisionStructure({});
-				collisionSearchQuery = newCollisionQuery(collisionSearchData.get());
+				collisionSearchQuery = newCollisionQuery(collisionSearchData.share());
 			}
 		}
 	} callbacksInstance;
 }
 
-void addTerrainCollider(uint32 name, Collider *c)
+void addTerrainCollider(uint32 name, Holder<Collider> c)
 {
-	collisionSearchData->update(name, c, transform());
+	collisionSearchData->update(name, std::move(c), transform());
 	collisionSearchData->rebuild();
 }
 
@@ -250,7 +250,7 @@ vec3 terrainIntersection(const Line &ln)
 		CAGE_ASSERT(abs(base[2]) < 1e-5);
 		return vec3(vec2(base), terrainOffset(vec2(base)));
 	}
-	const Collider *c = nullptr;
+	Holder<const Collider> c;
 	transform dummy;
 	collisionSearchQuery->collider(c, dummy);
 	const Triangle &t = c->triangles()[collisionSearchQuery->collisionPairs()[0].b];
