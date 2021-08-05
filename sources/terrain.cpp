@@ -10,10 +10,13 @@
 #include <cage-core/mesh.h>
 
 #include <cage-engine/engine.h>
-#include <cage-engine/graphics.h>
 #include <cage-engine/opengl.h>
 #include <cage-engine/assetStructs.h>
 #include <cage-engine/shaderConventions.h>
+#include <cage-engine/model.h>
+#include <cage-engine/texture.h>
+#include <cage-engine/renderObject.h>
+#include <cage-engine/graphicsError.h>
 
 #include "common.h"
 #include "baseTile.h"
@@ -331,13 +334,13 @@ namespace
 		t.cpuCollider->rebuild();
 	}
 
-	void textureGenerator(Tile *t, uint32 x, uint32 y, const ivec3 &idx, const vec3 &weights)
+	void textureGenerator(Tile *t, const ivec2 &xy, const ivec3 &idx, const vec3 &weights)
 	{
 		vec3 p = t->cpuMesh->positionAt(idx, weights) * t->l2w();
 		vec3 color; real roughness; real metallic;
 		terrainMaterial(vec2(p), color, roughness, metallic, false);
-		t->cpuAlbedo->set(x, y, color);
-		t->cpuSpecial->set(x, y, vec2(roughness, metallic));
+		t->cpuAlbedo->set(xy, color);
+		t->cpuSpecial->set(xy, vec2(roughness, metallic));
 	}
 
 	void generateTextures(Tile &t)
