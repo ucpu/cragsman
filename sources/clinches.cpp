@@ -41,10 +41,10 @@ namespace
 		{
 			Entity *e = engineEntities()->createUnique();
 			t.clinches.push_back(e);
-			CAGE_COMPONENT_ENGINE(Transform, tr, e);
+			TransformComponent &tr = e->value<TransformComponent>();
 			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
 			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
-			CAGE_COMPONENT_ENGINE(Render, r, e);
+			RenderComponent &r = e->value<RenderComponent>();
 			r.object = HashString("cragsman/clinch/clinch.object");
 		}
 	}
@@ -80,7 +80,7 @@ namespace
 				{
 					for (Entity *e : t.clinches)
 					{
-						CAGE_COMPONENT_ENGINE(Transform, tr, e);
+						TransformComponent &tr = e->value<TransformComponent>();
 						spatialSearchData->update(e->name(), Sphere(tr.position, 1));
 					}
 				}
@@ -122,8 +122,8 @@ void findInitialClinches(uint32 &count, Entity **result)
 		return;
 	}
 	std::sort(res.begin(), res.end(), [](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(Transform, ta, engineEntities()->get(a));
-		CAGE_COMPONENT_ENGINE(Transform, tb, engineEntities()->get(b));
+		TransformComponent &ta = engineEntities()->get(a)->value<TransformComponent>();
+		TransformComponent &tb = engineEntities()->get(b)->value<TransformComponent>();
 		real da = distance(ta.position, vec3());
 		real db = distance(tb.position, vec3());
 		return da < db;
@@ -139,8 +139,8 @@ Entity *findClinch(const vec3 &pos, real maxDist)
 	if (!res.size())
 		return nullptr;
 	uint32 n = *std::min_element(res.begin(), res.end(), [pos](uint32 a, uint32 b) {
-		CAGE_COMPONENT_ENGINE(Transform, ta, engineEntities()->get(a));
-		CAGE_COMPONENT_ENGINE(Transform, tb, engineEntities()->get(b));
+		TransformComponent &ta = engineEntities()->get(a)->value<TransformComponent>();
+		TransformComponent &tb = engineEntities()->get(b)->value<TransformComponent>();
 		real da = distance(ta.position, pos);
 		real db = distance(tb.position, pos);
 		return da < db;

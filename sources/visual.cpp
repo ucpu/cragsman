@@ -23,8 +23,8 @@ TimeoutComponent::TimeoutComponent() : ttl(0)
 Entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
 {
 	Entity *e = engineEntities()->createAnonymous();
-	CAGE_COMPONENT_ENGINE(Transform, t, e);
-	CAGE_COMPONENT_ENGINE(Render, r, e);
+	TransformComponent &t = e->value<TransformComponent>();
+	RenderComponent &r = e->value<RenderComponent>();
 	GAME_COMPONENT(Physics, p, e);
 	GAME_COMPONENT(Timeout, to, e);
 	t.position = position;
@@ -79,8 +79,8 @@ namespace
 				GAME_COMPONENT(SpringVisual, v, e);
 				Entity *e0 = engineEntities()->get(s.objects[0]);
 				Entity *e1 = engineEntities()->get(s.objects[1]);
-				CAGE_COMPONENT_ENGINE(Transform, t0, e0);
-				CAGE_COMPONENT_ENGINE(Transform, t1, e1);
+				TransformComponent &t0 = e0->value<TransformComponent>();
+				TransformComponent &t1 = e1->value<TransformComponent>();
 				vec3 v0 = entMov(e0);
 				vec3 v1 = entMov(e1);
 
@@ -101,7 +101,7 @@ namespace
 						color, 0.05, 5);
 					if (randomChance() < 0.2)
 					{
-						CAGE_COMPONENT_ENGINE(Light, pl, pe);
+						LightComponent &pl = pe->value<LightComponent>();
 						pl.color = color;
 						pl.intensity = 1.5;
 						pl.attenuation = vec3(0, 0, 0.15);

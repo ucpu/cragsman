@@ -133,9 +133,9 @@ namespace
 
 				{ // create the entity
 					t.entity = engineEntities()->createAnonymous();
-					CAGE_COMPONENT_ENGINE(Transform, tr, t.entity);
+					TransformComponent &tr = t.entity->value<TransformComponent>();
 					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
-					CAGE_COMPONENT_ENGINE(Render, r, t.entity);
+					RenderComponent &r = t.entity->value<RenderComponent>();
 					r.object = t.objectName;
 				}
 

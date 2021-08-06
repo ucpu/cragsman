@@ -42,7 +42,7 @@ namespace
 
 		static vec3 entPos(Entity *e)
 		{
-			CAGE_COMPONENT_ENGINE(Transform, t, e);
+			TransformComponent &t = e->value<TransformComponent>();
 			return t.position;
 		}
 
@@ -134,7 +134,7 @@ namespace
 				GAME_COMPONENT(Physics, p, e);
 				if (!p.collisionRadius.valid())
 					continue;
-				CAGE_COMPONENT_ENGINE(Transform, t, e);
+				TransformComponent &t = e->value<TransformComponent>();
 				if (collisionSearchQuery->query(Sphere(t.position, p.collisionRadius)))
 				{
 					Holder<const Collider> c;
@@ -164,7 +164,7 @@ namespace
 				CAGE_ASSERT(acceleration[e].valid());
 				GAME_COMPONENT(Physics, p, e);
 				CAGE_ASSERT(p.velocity.valid());
-				CAGE_COMPONENT_ENGINE(Transform, t, e);
+				TransformComponent &t = e->value<TransformComponent>();
 				CAGE_ASSERT(t.position.valid());
 				p.velocity *= 0.995; // damping
 				p.velocity += acceleration[e] * deltaTime;

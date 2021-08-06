@@ -83,8 +83,8 @@ namespace
 		p /= vec2(res[0], res[1]);
 		p = p * 2 - 1;
 		real px = p[0], py = -p[1];
-		CAGE_COMPONENT_ENGINE(Transform, ts, engineEntities()->get(cameraName));
-		CAGE_COMPONENT_ENGINE(Camera, cs, engineEntities()->get(cameraName));
+		TransformComponent &ts = engineEntities()->get(cameraName)->value<TransformComponent>();
+		CameraComponent &cs = engineEntities()->get(cameraName)->value<CameraComponent>();
 		mat4 view = mat4(inverse(ts));
 		mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, real(res[0]) / real(res[1]), cs.near, cs.far);
 		mat4 inv = inverse(proj * view);
@@ -99,7 +99,7 @@ namespace
 	{
 		if (b == MouseButtonsFlags::Left && m == ModifiersFlags::None)
 		{
-			CAGE_COMPONENT_ENGINE(Transform, ht, engineEntities()->get(characterHands[currentHand]));
+			TransformComponent &ht = engineEntities()->get(characterHands[currentHand])->value<TransformComponent>();
 			Entity *clinch = findClinch(ht.position, 3);
 			if (clinch)
 			{
@@ -139,8 +139,8 @@ namespace
 		{ // camera
 			Entity *cam;
 			cameraName = (cam = engineEntities()->createUnique())->name();
-			CAGE_COMPONENT_ENGINE(Transform, t, cam);
-			CAGE_COMPONENT_ENGINE(Camera, c, cam);
+			TransformComponent &t = cam->value<TransformComponent>();
+			CameraComponent &c = cam->value<CameraComponent>();
 			c.ambientColor = vec3(1);
 			c.ambientIntensity = 0.03;
 			c.near = 10;
@@ -151,9 +151,9 @@ namespace
 		{ // light
 			Entity *lig;
 			lightName = (lig = engineEntities()->createUnique())->name();
-			CAGE_COMPONENT_ENGINE(Transform, t, lig);
-			CAGE_COMPONENT_ENGINE(Light, l, lig);
-			CAGE_COMPONENT_ENGINE(Shadowmap, s, lig);
+			TransformComponent &t = lig->value<TransformComponent>();
+			LightComponent &l = lig->value<LightComponent>();
+			ShadowmapComponent &s = lig->value<ShadowmapComponent>();
 			l.lightType = LightTypeEnum::Directional;
 			l.color = vec3(1);
 			l.intensity = 3;
@@ -164,14 +164,14 @@ namespace
 		{ // cursor
 			Entity *cur;
 			cursorName = (cur = engineEntities()->createUnique())->name();
-			CAGE_COMPONENT_ENGINE(Transform, t, cur);
+			TransformComponent &t = cur->value<TransformComponent>();
 		}
 
 		{ // body
 			Entity *body;
 			characterBody = (body = engineEntities()->createUnique())->name();
-			CAGE_COMPONENT_ENGINE(Transform, t, body);
-			CAGE_COMPONENT_ENGINE(Render, r, body);
+			TransformComponent &t = body->value<TransformComponent>();
+			RenderComponent &r = body->value<RenderComponent>();
 			r.object = HashString("cragsman/character/body.object");
 			GAME_COMPONENT(Physics, p, body);
 			p.collisionRadius = 3;
@@ -186,27 +186,27 @@ namespace
 				characterElbows[i] = (elbow = engineEntities()->createUnique())->name();
 				characterHands[i] = (hand = engineEntities()->createUnique())->name();
 				{ // shoulder
-					CAGE_COMPONENT_ENGINE(Transform, t, shoulder);
-					CAGE_COMPONENT_ENGINE(Render, r, shoulder);
+					TransformComponent &t = shoulder->value<TransformComponent>();
+					RenderComponent &r = shoulder->value<RenderComponent>();
 					r.object = HashString("cragsman/character/shoulder.object");
 					GAME_COMPONENT(Physics, p, shoulder);
 					p.collisionRadius = 2.3067 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // elbow
-					CAGE_COMPONENT_ENGINE(Transform, t, elbow);
-					CAGE_COMPONENT_ENGINE(Render, r, elbow);
+					TransformComponent &t = elbow->value<TransformComponent>();
+					RenderComponent &r = elbow->value<RenderComponent>();
 					r.object = HashString("cragsman/character/elbow.object");
 					GAME_COMPONENT(Physics, p, elbow);
 					p.collisionRadius = 2.56723 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // hand
-					CAGE_COMPONENT_ENGINE(Transform, t, hand);
+					TransformComponent &t = hand->value<TransformComponent>();
 					rads angle = real(i) / characterHandsCount * rads::Full();
 					vec2 pos = vec2(cos(angle), sin(angle)) * 20;
 					t.position = vec3(pos, terrainOffset(pos));
-					CAGE_COMPONENT_ENGINE(Render, r, hand);
+					RenderComponent &r = hand->value<RenderComponent>();
 					r.object = HashString("cragsman/character/hand.object");
 					GAME_COMPONENT(Physics, p, hand);
 					p.collisionRadius = 1.1;
@@ -245,7 +245,7 @@ namespace
 		{ // player position
 			if (characterBody && engineEntities()->has(characterBody))
 			{
-				CAGE_COMPONENT_ENGINE(Transform, t, engineEntities()->get(characterBody));
+				TransformComponent &t = engineEntities()->get(characterBody)->value<TransformComponent>();
 				playerPosition = t.position;
 			}
 			else
@@ -253,22 +253,22 @@ namespace
 		}
 
 		{ // cursor
-			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
+			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
 			vec3 target = screenToWorld(engineWindow()->mousePosition());
 			if (target.valid())
 			{
 				static const real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = normalize(target - bt.position) * maxBodyCursorDistance + bt.position;
-				CAGE_COMPONENT_ENGINE(Transform, ct, engineEntities()->get(cursorName));
+				TransformComponent &ct = engineEntities()->get(cursorName)->value<TransformComponent>();
 				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
 				ct.position = target;
 			}
 		}
 
 		{ // camera
-			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
-			CAGE_COMPONENT_ENGINE(Transform, ct, engineEntities()->get(cameraName));
+			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
+			TransformComponent &ct = engineEntities()->get(cameraName)->value<TransformComponent>();
 			smoothBodyPosition.add(bt.position);
 			vec3 sbp = smoothBodyPosition.smooth();
 			ct.position = sbp + vec3(0, 0, 100);
@@ -277,8 +277,8 @@ namespace
 		}
 
 		{ // light
-			CAGE_COMPONENT_ENGINE(Transform, bt, engineEntities()->get(characterBody));
-			CAGE_COMPONENT_ENGINE(Transform, lt, engineEntities()->get(lightName));
+			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
+			TransformComponent &lt = engineEntities()->get(lightName)->value<TransformComponent>();
 			lt.position = bt.position;
 			lt.orientation = sunLightOrientation(vec2(playerPosition));
 		}
@@ -286,8 +286,8 @@ namespace
 		{ // hands orientations
 			for (uint32 i = 0; i < characterHandsCount; i++)
 			{
-				CAGE_COMPONENT_ENGINE(Transform, ht, engineEntities()->get(characterHands[i]));
-				CAGE_COMPONENT_ENGINE(Transform, et, engineEntities()->get(characterElbows[i]));
+				TransformComponent &ht = engineEntities()->get(characterHands[i])->value<TransformComponent>();
+				TransformComponent &et = engineEntities()->get(characterElbows[i])->value<TransformComponent>();
 				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
 			}
 		}

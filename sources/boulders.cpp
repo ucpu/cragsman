@@ -21,16 +21,16 @@ namespace
 	{
 		if (!characterBody)
 			return false;
-		CAGE_COMPONENT_ENGINE(Transform, pt, engineEntities()->get(characterBody));
+		TransformComponent &pt = engineEntities()->get(characterBody)->value<TransformComponent>();
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
 			Entity *e = engineEntities()->createAnonymous();
-			CAGE_COMPONENT_ENGINE(Transform, t, e);
+			TransformComponent &t = e->value<TransformComponent>();
 			t.scale = randomChance() + 1.5;
 			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
 			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
-			CAGE_COMPONENT_ENGINE(Render, r, e);
+			RenderComponent &r = e->value<RenderComponent>();
 			r.object = HashString("cragsman/boulder/boulder.object");
 			{
 				real dummy;
@@ -44,7 +44,7 @@ namespace
 		std::vector<Entity*> entsToDestroy;
 		for (Entity *e : BoulderComponent::component->entities())
 		{ // rotate boulders
-			CAGE_COMPONENT_ENGINE(Transform, t, e);
+			TransformComponent &t = e->value<TransformComponent>();
 			if (t.position[1] < pt.position[1] - 150)
 				entsToDestroy.push_back(e);
 			else
