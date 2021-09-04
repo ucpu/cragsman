@@ -21,12 +21,12 @@ namespace
 
 		{ // best
 			GuiTextComponent &t = ents->get(texts[0])->value<GuiTextComponent>();
-			t.value = stringizer() + bestScore;
+			t.value = Stringizer() + bestScore;
 		}
 
 		{ // current
 			GuiTextComponent &t = ents->get(texts[1])->value<GuiTextComponent>();
-			t.value = stringizer() + currentScore;
+			t.value = Stringizer() + currentScore;
 		}
 
 		return false;

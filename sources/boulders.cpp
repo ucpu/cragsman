@@ -27,14 +27,14 @@ namespace
 			Entity *e = engineEntities()->createAnonymous();
 			TransformComponent &t = e->value<TransformComponent>();
 			t.scale = randomChance() + 1.5;
-			t.position = pt.position + vec3(randomChance() * 300 - 150, 250, 0);
-			t.position[2] = terrainOffset(vec2(t.position)) + t.scale;
+			t.position = pt.position + Vec3(randomChance() * 300 - 150, 250, 0);
+			t.position[2] = terrainOffset(Vec2(t.position)) + t.scale;
 			t.orientation = randomDirectionQuat();
 			RenderComponent &r = e->value<RenderComponent>();
 			r.object = HashString("cragsman/boulder/boulder.object");
 			{
-				real dummy;
-				terrainMaterial(vec2(t.position), r.color, dummy, dummy, true);
+				Real dummy;
+				terrainMaterial(Vec2(t.position), r.color, dummy, dummy, true);
 			}
 			GAME_COMPONENT(Physics, p, e);
 			p.collisionRadius = t.scale;
@@ -50,8 +50,8 @@ namespace
 			else
 			{
 				GAME_COMPONENT(Physics, p, e);
-				vec3 r = 1.5 * p.velocity / p.collisionRadius;
-				quat rot = quat(degs(r[2] - r[1]), degs(), degs(-r[0]));
+				Vec3 r = 1.5 * p.velocity / p.collisionRadius;
+				Quat rot = Quat(Degs(r[2] - r[1]), Degs(), Degs(-r[0]));
 				t.orientation = rot * t.orientation;
 			}
 		}

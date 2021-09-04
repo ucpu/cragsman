@@ -20,7 +20,7 @@ SpringVisualComponent::SpringVisualComponent() : color(1, 1, 1)
 TimeoutComponent::TimeoutComponent() : ttl(0)
 {}
 
-Entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &color, real mass, uint32 ttl)
+Entity *newParticle(const Vec3 &position, const Vec3 &velocity, const Vec3 &color, Real mass, uint32 ttl)
 {
 	Entity *e = engineEntities()->createAnonymous();
 	TransformComponent &t = e->value<TransformComponent>();
@@ -33,21 +33,21 @@ Entity *newParticle(const vec3 &position, const vec3 &velocity, const vec3 &colo
 	r.object = HashString("cragsman/particle/particle.object");
 	p.mass = mass;
 	p.velocity = velocity;
-	p.collisionRadius = real::Nan();
+	p.collisionRadius = Real::Nan();
 	to.ttl = ttl;
 	return e;
 }
 
-vec3 colorDeviation(const vec3 &color, real deviation)
+Vec3 colorDeviation(const Vec3 &color, Real deviation)
 {
-	vec3 hsv = colorRgbToHsv(color) + (vec3(randomChance(), randomChance(), randomChance()) - 0.5) * deviation;
+	Vec3 hsv = colorRgbToHsv(color) + (Vec3(randomChance(), randomChance(), randomChance()) - 0.5) * deviation;
 	hsv[0] = (hsv[0] + 1) % 1;
 	return colorHsvToRgb(clamp(hsv, 0, 1));
 }
 
 namespace
 {
-	vec3 entMov(Entity *e)
+	Vec3 entMov(Entity *e)
 	{
 		if (e->has(PhysicsComponent::component))
 		{
@@ -81,8 +81,8 @@ namespace
 				Entity *e1 = engineEntities()->get(s.objects[1]);
 				TransformComponent &t0 = e0->value<TransformComponent>();
 				TransformComponent &t1 = e1->value<TransformComponent>();
-				vec3 v0 = entMov(e0);
-				vec3 v1 = entMov(e1);
+				Vec3 v0 = entMov(e0);
+				Vec3 v1 = entMov(e1);
 
 #ifdef CAGE_DEBUG
 				uint32 cnt = 3;
@@ -92,9 +92,9 @@ namespace
 #endif // CAGE_DEBUG
 				for (uint32 i = 1; i < cnt - 1; i++)
 				{
-					real deviation = sin(rads::Full() * 0.5 * real(i) / cnt);
-					real portion = (randomChance() + i) / cnt;
-					vec3 color = colorDeviation(v.color, 0.1);
+					Real deviation = sin(Rads::Full() * 0.5 * Real(i) / cnt);
+					Real portion = (randomChance() + i) / cnt;
+					Vec3 color = colorDeviation(v.color, 0.1);
 					Entity *pe = newParticle(
 						interpolate(t0.position, t1.position, portion) + randomDirection3() * deviation * 1.5,
 						interpolate(v0, v1, portion) + randomDirection3() * deviation * 5,
@@ -104,7 +104,7 @@ namespace
 						LightComponent &pl = pe->value<LightComponent>();
 						pl.color = color;
 						pl.intensity = 1.5;
-						pl.attenuation = vec3(0, 0, 0.15);
+						pl.attenuation = Vec3(0, 0, 0.15);
 					}
 				}
 			}

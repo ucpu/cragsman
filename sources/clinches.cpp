@@ -15,7 +15,7 @@
 
 namespace
 {
-	const real tileLength = 70; // real world size of a tile (in 1 dimension)
+	const Real tileLength = 70; 
 
 	Holder<SpatialStructure> spatialSearchData;
 	Holder<SpatialQuery> spatialSearchQuery;
@@ -24,7 +24,7 @@ namespace
 	{
 		TilePos pos;
 		std::vector<Entity *> clinches;
-		real distanceToPlayer() const
+		Real distanceToPlayer() const
 		{
 			return pos.distanceToPlayer(tileLength);
 		}
@@ -36,14 +36,14 @@ namespace
 	{
 		CAGE_ASSERT(t.clinches.empty());
 		RandomGenerator rg(hash(t.pos.x), hash(t.pos.y));
-		uint32 cnt = numeric_cast<uint32>(pow(real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
+		uint32 cnt = numeric_cast<uint32>(pow(Real::E(), max(t.pos.y - 2, 0) * -0.01) * 5) + 1;
 		for (uint32 i = 0; i < cnt; i++)
 		{
 			Entity *e = engineEntities()->createUnique();
 			t.clinches.push_back(e);
 			TransformComponent &tr = e->value<TransformComponent>();
-			vec2 pos = (vec2(t.pos.x, t.pos.y) + vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
-			tr.position = vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
+			Vec2 pos = (Vec2(t.pos.x, t.pos.y) + Vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
+			tr.position = Vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
 			RenderComponent &r = e->value<RenderComponent>();
 			r.object = HashString("cragsman/clinch/clinch.object");
 		}
@@ -124,15 +124,15 @@ void findInitialClinches(uint32 &count, Entity **result)
 	std::sort(res.begin(), res.end(), [](uint32 a, uint32 b) {
 		TransformComponent &ta = engineEntities()->get(a)->value<TransformComponent>();
 		TransformComponent &tb = engineEntities()->get(b)->value<TransformComponent>();
-		real da = distance(ta.position, vec3());
-		real db = distance(tb.position, vec3());
+		Real da = distance(ta.position, Vec3());
+		Real db = distance(tb.position, Vec3());
 		return da < db;
 	});
 	for (uint32 i = 0; i < count; i++)
 		result[i] = engineEntities()->get(res[i]);
 }
 
-Entity *findClinch(const vec3 &pos, real maxDist)
+Entity *findClinch(const Vec3 &pos, Real maxDist)
 {
 	spatialSearchQuery->intersection(Sphere(pos, maxDist));
 	auto res = spatialSearchQuery->result();
@@ -141,8 +141,8 @@ Entity *findClinch(const vec3 &pos, real maxDist)
 	uint32 n = *std::min_element(res.begin(), res.end(), [pos](uint32 a, uint32 b) {
 		TransformComponent &ta = engineEntities()->get(a)->value<TransformComponent>();
 		TransformComponent &tb = engineEntities()->get(b)->value<TransformComponent>();
-		real da = distance(ta.position, pos);
-		real db = distance(tb.position, pos);
+		Real da = distance(ta.position, pos);
+		Real db = distance(tb.position, pos);
 		return da < db;
 	});
 	return engineEntities()->get(n);

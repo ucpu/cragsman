@@ -16,7 +16,7 @@
 
 uint32 cameraName;
 uint32 characterBody;
-vec3 playerPosition;
+Vec3 playerPosition;
 
 namespace
 {
@@ -32,9 +32,9 @@ namespace
 	uint32 characterHandJoints[characterHandsCount];
 	uint32 currentHand;
 
-	VariableSmoothingBuffer<vec3> smoothBodyPosition;
+	VariableSmoothingBuffer<Vec3> smoothBodyPosition;
 
-	Entity *addSpring(uint32 a, uint32 b, real restDistance, real stiffness, real damping)
+	Entity *addSpring(uint32 a, uint32 b, Real restDistance, Real stiffness, Real damping)
 	{
 		Entity *spring = engineEntities()->createUnique();
 		GAME_COMPONENT(Spring, s, spring);
@@ -47,13 +47,13 @@ namespace
 		return spring;
 	}
 
-	vec3 colorIndex(uint32 i)
+	Vec3 colorIndex(uint32 i)
 	{
 		switch (i)
 		{
-		case 0: return vec3(1, 1, 0);
-		case 1: return vec3(0, 1, 1);
-		case 2: return vec3(1, 0, 1);
+		case 0: return Vec3(1, 1, 0);
+		case 1: return Vec3(0, 1, 1);
+		case 2: return Vec3(1, 0, 1);
 		default: CAGE_THROW_CRITICAL(Exception, "invalid color index");
 		}
 	}
@@ -76,26 +76,26 @@ namespace
 		}
 	}
 
-	vec3 screenToWorld(const ivec2 &point)
+	Vec3 screenToWorld(const Vec2i &point)
 	{
-		ivec2 res = engineWindow()->resolution();
-		vec2 p = vec2(point[0], point[1]);
-		p /= vec2(res[0], res[1]);
+		Vec2i res = engineWindow()->resolution();
+		Vec2 p = Vec2(point[0], point[1]);
+		p /= Vec2(res[0], res[1]);
 		p = p * 2 - 1;
-		real px = p[0], py = -p[1];
+		Real px = p[0], py = -p[1];
 		TransformComponent &ts = engineEntities()->get(cameraName)->value<TransformComponent>();
 		CameraComponent &cs = engineEntities()->get(cameraName)->value<CameraComponent>();
-		mat4 view = mat4(inverse(ts));
-		mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, real(res[0]) / real(res[1]), cs.near, cs.far);
-		mat4 inv = inverse(proj * view);
-		vec4 pn = inv * vec4(px, py, -1, 1);
-		vec4 pf = inv * vec4(px, py, 1, 1);
-		vec3 near = vec3(pn) / pn[3];
-		vec3 far = vec3(pf) / pf[3];
+		Mat4 view = Mat4(inverse(ts));
+		Mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, Real(res[0]) / Real(res[1]), cs.near, cs.far);
+		Mat4 inv = inverse(proj * view);
+		Vec4 pn = inv * Vec4(px, py, -1, 1);
+		Vec4 pf = inv * Vec4(px, py, 1, 1);
+		Vec3 near = Vec3(pn) / pn[3];
+		Vec3 far = Vec3(pf) / pf[3];
 		return terrainIntersection(makeSegment(near, far));
 	}
 
-	bool mousePress(MouseButtonsFlags b, ModifiersFlags m, const ivec2 &p)
+	bool mousePress(MouseButtonsFlags b, ModifiersFlags m, const Vec2i &p)
 	{
 		if (b == MouseButtonsFlags::Left && m == ModifiersFlags::None)
 		{
@@ -141,7 +141,7 @@ namespace
 			cameraName = (cam = engineEntities()->createUnique())->name();
 			TransformComponent &t = cam->value<TransformComponent>();
 			CameraComponent &c = cam->value<CameraComponent>();
-			c.ambientColor = vec3(1);
+			c.ambientColor = Vec3(1);
 			c.ambientIntensity = 0.03;
 			c.near = 10;
 			c.far = 500;
@@ -155,10 +155,10 @@ namespace
 			LightComponent &l = lig->value<LightComponent>();
 			ShadowmapComponent &s = lig->value<ShadowmapComponent>();
 			l.lightType = LightTypeEnum::Directional;
-			l.color = vec3(1);
+			l.color = Vec3(1);
 			l.intensity = 3;
 			s.resolution = 4096;
-			s.worldSize = vec3(150, 150, 200);
+			s.worldSize = Vec3(150, 150, 200);
 		}
 
 		{ // cursor
@@ -203,9 +203,9 @@ namespace
 				}
 				{ // hand
 					TransformComponent &t = hand->value<TransformComponent>();
-					rads angle = real(i) / characterHandsCount * rads::Full();
-					vec2 pos = vec2(cos(angle), sin(angle)) * 20;
-					t.position = vec3(pos, terrainOffset(pos));
+					Rads angle = Real(i) / characterHandsCount * Rads::Full();
+					Vec2 pos = Vec2(cos(angle), sin(angle)) * 20;
+					t.position = Vec3(pos, terrainOffset(pos));
 					RenderComponent &r = hand->value<RenderComponent>();
 					r.object = HashString("cragsman/character/hand.object");
 					GAME_COMPONENT(Physics, p, hand);
@@ -249,19 +249,19 @@ namespace
 				playerPosition = t.position;
 			}
 			else
-				playerPosition = vec3::Nan();
+				playerPosition = Vec3::Nan();
 		}
 
 		{ // cursor
 			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
-			vec3 target = screenToWorld(engineWindow()->mousePosition());
+			Vec3 target = screenToWorld(engineWindow()->mousePosition());
 			if (target.valid())
 			{
-				static const real maxBodyCursorDistance = 30;
+				static const Real maxBodyCursorDistance = 30;
 				if (distance(bt.position, target) > maxBodyCursorDistance)
 					target = normalize(target - bt.position) * maxBodyCursorDistance + bt.position;
 				TransformComponent &ct = engineEntities()->get(cursorName)->value<TransformComponent>();
-				target[2] = terrainOffset(vec2(target)) + CLINCH_TERRAIN_OFFSET;
+				target[2] = terrainOffset(Vec2(target)) + CLINCH_TERRAIN_OFFSET;
 				ct.position = target;
 			}
 		}
@@ -270,9 +270,9 @@ namespace
 			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
 			TransformComponent &ct = engineEntities()->get(cameraName)->value<TransformComponent>();
 			smoothBodyPosition.add(bt.position);
-			vec3 sbp = smoothBodyPosition.smooth();
-			ct.position = sbp + vec3(0, 0, 100);
-			quat rot = quat(sbp - ct.position, vec3(0, 1, 0));
+			Vec3 sbp = smoothBodyPosition.smooth();
+			ct.position = sbp + Vec3(0, 0, 100);
+			Quat rot = Quat(sbp - ct.position, Vec3(0, 1, 0));
 			ct.orientation = interpolate(ct.orientation, rot, 0.1);
 		}
 
@@ -280,7 +280,7 @@ namespace
 			TransformComponent &bt = engineEntities()->get(characterBody)->value<TransformComponent>();
 			TransformComponent &lt = engineEntities()->get(lightName)->value<TransformComponent>();
 			lt.position = bt.position;
-			lt.orientation = sunLightOrientation(vec2(playerPosition));
+			lt.orientation = sunLightOrientation(Vec2(playerPosition));
 		}
 
 		{ // hands orientations
@@ -288,7 +288,7 @@ namespace
 			{
 				TransformComponent &ht = engineEntities()->get(characterHands[i])->value<TransformComponent>();
 				TransformComponent &et = engineEntities()->get(characterElbows[i])->value<TransformComponent>();
-				ht.orientation = quat(ht.position - et.position, vec3(0, 0, 1), false);
+				ht.orientation = Quat(ht.position - et.position, Vec3(0, 0, 1), false);
 			}
 		}
 

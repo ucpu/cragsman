@@ -26,7 +26,7 @@
 #include <set>
 #include <atomic>
 
-std::set<TilePos> findNeededTiles(real tileLength, real range)
+std::set<TilePos> findNeededTiles(Real tileLength, Real range)
 {
 	std::set<TilePos> neededTiles;
 	TilePos pt;
@@ -46,9 +46,9 @@ std::set<TilePos> findNeededTiles(real tileLength, real range)
 
 namespace
 {
-	constexpr real tileLength = 30; // real world size of a tile (in 1 dimension)
+	constexpr Real tileLength = 30; 
 	constexpr uint32 tileMeshResolution = 60; // number of vertices (in 1 dimension)
-	constexpr real distanceToUnloadTile = 300;
+	constexpr Real distanceToUnloadTile = 300;
 
 	enum class TileStateEnum
 	{
@@ -78,14 +78,14 @@ namespace
 		uint32 objectName = 0;
 		uint32 textureResolution = 0;
 
-		real distanceToPlayer() const
+		Real distanceToPlayer() const
 		{
 			return pos.distanceToPlayer(tileLength);
 		}
 
-		transform l2w() const
+		Transform l2w() const
 		{
-			return transform(vec3(pos.x, pos.y, 0) * tileLength);
+			return Transform(Vec3(pos.x, pos.y, 0) * tileLength);
 		}
 	};
 
@@ -134,7 +134,7 @@ namespace
 				{ // create the entity
 					t.entity = engineEntities()->createAnonymous();
 					TransformComponent &tr = t.entity->value<TransformComponent>();
-					tr.position = vec3(t.pos.x, t.pos.y, 0) * tileLength;
+					tr.position = Vec3(t.pos.x, t.pos.y, 0) * tileLength;
 					RenderComponent &r = t.entity->value<RenderComponent>();
 					r.object = t.objectName;
 				}
@@ -213,10 +213,10 @@ namespace
 				}
 
 				// transfer asset ownership
-				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, std::move(t.gpuAlbedo), stringizer() + "albedo " + t.pos);
-				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, std::move(t.gpuSpecial), stringizer() + "special " + t.pos);
-				ass->fabricate<AssetSchemeIndexModel, Model>(t.meshName, std::move(t.gpuMesh), stringizer() + "mesh " + t.pos);
-				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, std::move(t.renderObject), stringizer() + "object " + t.pos);
+				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, std::move(t.gpuAlbedo), Stringizer() + "albedo " + t.pos);
+				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.specialName, std::move(t.gpuSpecial), Stringizer() + "special " + t.pos);
+				ass->fabricate<AssetSchemeIndexModel, Model>(t.meshName, std::move(t.gpuMesh), Stringizer() + "mesh " + t.pos);
+				ass->fabricate<AssetSchemeIndexRenderObject, RenderObject>(t.objectName, std::move(t.renderObject), Stringizer() + "object " + t.pos);
 
 				t.status = TileStateEnum::Entity;
 				break;
@@ -234,12 +234,12 @@ namespace
 		static Holder<Mutex> mut = newMutex();
 		ScopeLock<Mutex> lock(mut);
 		Tile *result = nullptr;
-		real rd = real::Nan();
+		Real rd = Real::Nan();
 		for (Tile &t : tiles)
 		{
 			if (t.status != TileStateEnum::Generate)
 				continue;
-			real d = t.distanceToPlayer();
+			Real d = t.distanceToPlayer();
 			if (d > distanceToUnloadTile)
 			{
 				t.status = TileStateEnum::Init;
@@ -283,24 +283,24 @@ namespace
 
 	void generateMesh(Tile &t)
 	{
-		constexpr real pwoa = tileLength / (tileMeshResolution - 1);
-		constexpr vec2 pwox = vec2(pwoa, 0);
-		constexpr vec2 pwoy = vec2(0, pwoa);
-		std::vector<vec3> positions, normals;
+		constexpr Real pwoa = tileLength / (tileMeshResolution - 1);
+		constexpr Vec2 pwox = Vec2(pwoa, 0);
+		constexpr Vec2 pwoy = Vec2(0, pwoa);
+		std::vector<Vec3> positions, normals;
 		positions.reserve(tileMeshResolution * tileMeshResolution);
 		normals.reserve(tileMeshResolution * tileMeshResolution);
-		transform l2w = t.l2w();
+		Transform l2w = t.l2w();
 		for (uint32 y = 0; y < tileMeshResolution; y++)
 		{
 			for (uint32 x = 0; x < tileMeshResolution; x++)
 			{
-				vec2 pt = (vec2(x, y) - 2) * tileLength / (tileMeshResolution - 5);
-				vec2 pw = vec2(l2w * vec3(pt, 0));
-				real z = terrainOffset(pw);
-				positions.push_back(vec3(pt, z));
-				real tox = terrainOffset(pw + pwox) - z;
-				real toy = terrainOffset(pw + pwoy) - z;
-				normals.push_back(normalize(vec3(-tox, -toy, 0.1)));
+				Vec2 pt = (Vec2(x, y) - 2) * tileLength / (tileMeshResolution - 5);
+				Vec2 pw = Vec2(l2w * Vec3(pt, 0));
+				Real z = terrainOffset(pw);
+				positions.push_back(Vec3(pt, z));
+				Real tox = terrainOffset(pw + pwox) - z;
+				Real toy = terrainOffset(pw + pwoy) - z;
+				normals.push_back(normalize(Vec3(-tox, -toy, 0.1)));
 			}
 		}
 		t.cpuMesh = newMesh();
@@ -322,7 +322,7 @@ namespace
 
 		//auto msh = t.cpuMesh->copy();
 		//msh->applyTransform(t.l2w());
-		//msh->exportObjFile({}, stringizer() + "debug/" + t.pos + ".obj");
+		
 	}
 
 	void generateCollider(Tile &t)
@@ -334,13 +334,13 @@ namespace
 		t.cpuCollider->rebuild();
 	}
 
-	void textureGenerator(Tile *t, const ivec2 &xy, const ivec3 &idx, const vec3 &weights)
+	void textureGenerator(Tile *t, const Vec2i &xy, const Vec3i &idx, const Vec3 &weights)
 	{
-		vec3 p = t->cpuMesh->positionAt(idx, weights) * t->l2w();
-		vec3 color; real roughness; real metallic;
-		terrainMaterial(vec2(p), color, roughness, metallic, false);
+		Vec3 p = t->cpuMesh->positionAt(idx, weights) * t->l2w();
+		Vec3 color; Real roughness; Real metallic;
+		terrainMaterial(Vec2(p), color, roughness, metallic, false);
 		t->cpuAlbedo->set(xy, color);
-		t->cpuSpecial->set(xy, vec2(roughness, metallic));
+		t->cpuSpecial->set(xy, Vec2(roughness, metallic));
 	}
 
 	void generateTextures(Tile &t)
@@ -359,13 +359,13 @@ namespace
 
 		//auto tex = t.cpuAlbedo->copy();
 		//tex->verticalFlip();
-		//tex->exportFile(stringizer() + "debug/" + t.pos + ".png");
+		
 	}
 
 	void generateRenderObject(Tile &t)
 	{
 		t.renderObject = newRenderObject();
-		real thresholds[1] = { 0 };
+		Real thresholds[1] = { 0 };
 		uint32 meshIndices[2] = { 0, 1 };
 		uint32 meshNames[1] = { t.meshName };
 		t.renderObject->setLods(thresholds, meshIndices, meshNames);
@@ -406,7 +406,7 @@ namespace
 	{
 		uint32 cpuCount = max(processorsCount(), 2u) - 1;
 		for (uint32 i = 0; i < cpuCount; i++)
-			generatorThreads.push_back(newThread(Delegate<void()>().bind<&generatorEntry>(), stringizer() + "generator " + i));
+			generatorThreads.push_back(newThread(Delegate<void()>().bind<&generatorEntry>(), Stringizer() + "generator " + i));
 	}
 
 	class Callbacks

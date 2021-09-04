@@ -17,17 +17,17 @@ struct TilePos
 		return y < other.y;
 	}
 
-	real distanceToPlayer(real tileLength) const
+	Real distanceToPlayer(Real tileLength) const
 	{
-		return distance(vec2(x, y) * tileLength, vec2(playerPosition));
+		return distance(Vec2(x, y) * tileLength, Vec2(playerPosition));
 	}
 };
 
-inline stringizer &operator + (stringizer &s, const TilePos &p)
+inline Stringizer &operator + (Stringizer &s, const TilePos &p)
 {
 	return s + p.x + " " + p.y;
 }
 
-std::set<TilePos> findNeededTiles(real tileLength, real range);
+std::set<TilePos> findNeededTiles(Real tileLength, Real range);
 
 #endif // !baseTile_h_dsfg7d8f5
