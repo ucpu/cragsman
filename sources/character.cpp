@@ -6,10 +6,10 @@
 #include <cage-core/variableSmoothingBuffer.h>
 #include <cage-core/camera.h>
 
-#include <cage-engine/core.h>
-#include <cage-engine/engine.h>
+#include <cage-engine/scene.h>
 #include <cage-engine/window.h>
-#include <cage-engine/gui.h>
+#include <cage-engine/inputs.h>
+#include <cage-simple/engine.h>
 
 #include <vector>
 #include <algorithm>
@@ -20,7 +20,7 @@ Vec3 playerPosition;
 
 namespace
 {
-	WindowEventListeners windowListeners;
+	InputListener<InputClassEnum::MousePress, InputMouse, bool> mousePressListener;
 
 	uint32 lightName;
 	uint32 cursorName;
@@ -95,9 +95,9 @@ namespace
 		return terrainIntersection(makeSegment(near, far));
 	}
 
-	bool mousePress(MouseButtonsFlags b, ModifiersFlags m, const Vec2i &p)
+	bool mousePress(InputMouse in)
 	{
-		if (b == MouseButtonsFlags::Left && m == ModifiersFlags::None)
+		if (in.buttons == MouseButtonsFlags::Left && in.mods == ModifiersFlags::None)
 		{
 			TransformComponent &ht = engineEntities()->get(characterHands[currentHand])->value<TransformComponent>();
 			Entity *clinch = findClinch(ht.position, 3);
@@ -297,8 +297,8 @@ namespace
 
 	bool engineInitialize()
 	{
-		windowListeners.attachAll(engineWindow());
-		windowListeners.mousePress.bind<&mousePress>();
+		mousePressListener.attach(engineWindow()->events);
+		mousePressListener.bind<&mousePress>();
 		return false;
 	}
 

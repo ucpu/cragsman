@@ -6,21 +6,19 @@
 #include <cage-core/ini.h>
 #include <cage-core/hashString.h>
 
-#include <cage-engine/core.h>
 #include <cage-engine/window.h>
-#include <cage-engine/engine.h>
-#include <cage-engine/engineStatistics.h>
 #include <cage-engine/highPerformanceGpuHint.h>
-#include <cage-engine/fullscreenSwitcher.h>
+#include <cage-simple/engine.h>
+#include <cage-simple/statisticsGui.h>
+#include <cage-simple/fullscreenSwitcher.h>
 
 using namespace cage;
 
 namespace
 {
-	bool windowClose()
+	void windowClose(InputWindow)
 	{
 		engineStop();
-		return true;
 	}
 }
 
@@ -37,15 +35,15 @@ int main(int argc, const char *args[])
 		controlThread().updatePeriod(1000000 / 30);
 		engineAssets()->add(HashString("cragsman/cragsman.pack"));
 
-		EventListener<bool()> windowCloseListener;
-		windowCloseListener.bind<&windowClose>();
-		engineWindow()->events.windowClose.attach(windowCloseListener);
+		InputListener<InputClassEnum::WindowClose, InputWindow> closeListener;
+		closeListener.attach(engineWindow()->events);
+		closeListener.bind<&windowClose>();
 		engineWindow()->title("Cragsman");
 
 		{
 			Holder<FullscreenSwitcher> fullscreen = newFullscreenSwitcher({});
-			Holder<EngineStatistics> engineStatistics = newEngineStatistics();
-			engineStatistics->statisticsScope = EngineStatisticsScopeEnum::None;
+			Holder<StatisticsGui> engineStatistics = newStatisticsGui();
+			engineStatistics->statisticsScope = StatisticsGuiScopeEnum::None;
 			engineStatistics->screenPosition = Vec2(0.5, 0.5);
 
 			engineStart();

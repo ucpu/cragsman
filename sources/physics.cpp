@@ -5,8 +5,8 @@
 #include <cage-core/collisionStructure.h>
 #include <cage-core/collider.h>
 
-#include <cage-engine/core.h>
-#include <cage-engine/engine.h>
+#include <cage-engine/scene.h>
+#include <cage-simple/engine.h>
 
 #include <vector>
 #include <unordered_map>

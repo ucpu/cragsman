@@ -3,9 +3,9 @@
 #include <cage-core/entities.h>
 #include <cage-core/hashString.h>
 
-#include <cage-engine/core.h>
-#include <cage-engine/engine.h>
-#include <cage-engine/gui.h>
+#include <cage-engine/scene.h>
+#include <cage-engine/guiComponents.h>
+#include <cage-simple/engine.h>
 
 namespace
 {
@@ -17,7 +17,7 @@ namespace
 		sint32 currentScore = numeric_cast<sint32>(playerPosition[1] * 0.1);
 		bestScore = max(currentScore, bestScore);
 
-		EntityManager *ents = engineGui()->entities();
+		EntityManager *ents = engineGuiEntities();
 
 		{ // best
 			GuiTextComponent &t = ents->get(texts[0])->value<GuiTextComponent>();
@@ -34,7 +34,7 @@ namespace
 
 	bool engineInitialize()
 	{
-		EntityManager *ents = engineGui()->entities();
+		EntityManager *ents = engineGuiEntities();
 
 		Entity *panel = nullptr;
 		{ // panel

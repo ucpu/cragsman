@@ -10,7 +10,7 @@ add_subdirectory(externals/cage)
 
 file(GLOB_RECURSE cragsman-sources "sources/*")
 add_executable(cragsman ${cragsman-sources})
-target_link_libraries(cragsman cage-engine)
+target_link_libraries(cragsman cage-simple)
 cage_ide_category(cragsman cragsman)
 cage_ide_sort_files(cragsman)
 cage_ide_working_dir_in_place(cragsman)
