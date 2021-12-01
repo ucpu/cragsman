@@ -11,16 +11,12 @@
 namespace
 {
 	struct BoulderComponent
-	{
-		static EntityComponent *component;
-	};
+	{};
 
-	EntityComponent *BoulderComponent::component;
-
-	bool engineUpdate()
+	void engineUpdate()
 	{
 		if (!characterBody)
-			return false;
+			return;
 		TransformComponent &pt = engineEntities()->get(characterBody)->value<TransformComponent>();
 		if (randomChance() < 0.01)
 		{ // spawn a boulder
@@ -36,20 +32,20 @@ namespace
 				Real dummy;
 				terrainMaterial(Vec2(t.position), r.color, dummy, dummy, true);
 			}
-			::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+			PhysicsComponent &p = e->value<PhysicsComponent>();
 			p.collisionRadius = t.scale;
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
-			::BoulderComponent &br = (e)->value<::BoulderComponent>(::BoulderComponent::component);;
+			BoulderComponent &br = e->value<BoulderComponent>();
 		}
 		std::vector<Entity*> entsToDestroy;
-		for (Entity *e : BoulderComponent::component->entities())
+		for (Entity *e : engineEntities()->component<BoulderComponent>()->entities())
 		{ // rotate boulders
 			TransformComponent &t = e->value<TransformComponent>();
 			if (t.position[1] < pt.position[1] - 150)
 				entsToDestroy.push_back(e);
 			else
 			{
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				Vec3 r = 1.5 * p.velocity / p.collisionRadius;
 				Quat rot = Quat(Degs(r[2] - r[1]), Degs(), Degs(-r[0]));
 				t.orientation = rot * t.orientation;
@@ -57,19 +53,17 @@ namespace
 		}
 		for (auto e : entsToDestroy)
 			e->destroy();
-		return false;
 	}
 
-	bool engineInitialize()
+	void engineInitialize()
 	{
-		BoulderComponent::component = engineEntities()->defineComponent(BoulderComponent());
-		return false;
+		engineEntities()->defineComponent(BoulderComponent());
 	}
 
 	class Callbacks
 	{
-		EventListener<bool()> engineInitListener;
-		EventListener<bool()> engineUpdateListener;
+		EventListener<void()> engineInitListener;
+		EventListener<void()> engineUpdateListener;
 	public:
 		Callbacks()
 		{

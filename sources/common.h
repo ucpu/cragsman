@@ -19,7 +19,6 @@ Quat sunLightOrientation(const Vec2 &playerPosition);
 
 struct PhysicsComponent
 {
-	static EntityComponent *component;
 	Vec3 velocity;
 	Real mass;
 	Real collisionRadius;
@@ -27,7 +26,6 @@ struct PhysicsComponent
 
 struct SpringComponent
 {
-	static EntityComponent *component;
 	uint32 objects[2];
 	Real restDistance;
 	Real stiffness;
@@ -37,14 +35,12 @@ struct SpringComponent
 
 struct SpringVisualComponent
 {
-	static EntityComponent *component;
 	Vec3 color;
 	SpringVisualComponent();
 };
 
 struct TimeoutComponent
 {
-	static EntityComponent *component;
 	uint32 ttl;
 	TimeoutComponent();
 };

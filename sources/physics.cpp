@@ -12,9 +12,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-EntityComponent *PhysicsComponent::component;
-EntityComponent *SpringComponent::component;
-
 SpringComponent::SpringComponent() : objects{0, 0}
 {}
 
@@ -31,7 +28,7 @@ namespace
 	class PhysicsSimulation
 	{
 	public:
-		static const uint32 repeatSteps = 2; // increasing steps increases simulation precision
+		static constexpr uint32 repeatSteps = 2; // increasing steps increases simulation precision
 		const Real deltaTime;
 
 		std::vector<Entity*> entsToDestroy;
@@ -48,9 +45,9 @@ namespace
 
 		static Real entMass(Entity *e)
 		{
-			if (e->has(PhysicsComponent::component))
+			if (e->has<PhysicsComponent>())
 			{
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				CAGE_ASSERT(p.mass > 1e-7);
 				return p.mass;
 			}
@@ -59,9 +56,9 @@ namespace
 
 		static Vec3 entVel(Entity *e)
 		{
-			if (e->has(PhysicsComponent::component))
+			if (e->has<PhysicsComponent>())
 			{
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				return p.velocity;
 			}
 			return {};
@@ -76,9 +73,9 @@ namespace
 		void springs()
 		{
 			Real timeStep2 = deltaTime * deltaTime;
-			for (Entity *e : SpringComponent::component->entities())
+			for (Entity *e : engineEntities()->component<SpringComponent>()->entities())
 			{
-				::SpringComponent &s = (e)->value<::SpringComponent>(::SpringComponent::component);;
+				SpringComponent &s = e->value<SpringComponent>();
 				CAGE_ASSERT(s.restDistance >= 0);
 				CAGE_ASSERT(s.stiffness > 0 && s.stiffness < 1);
 				CAGE_ASSERT(s.damping > 0 && s.damping < 1);
@@ -106,9 +103,9 @@ namespace
 		void gravity()
 		{
 			Vec3 g = Vec3(0, -9.8, 0);
-			for (Entity *e : PhysicsComponent::component->entities())
+			for (Entity *e : engineEntities()->component<PhysicsComponent>()->entities())
 			{
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				addForce(e, p.mass * g);
 			}
 		}
@@ -129,9 +126,9 @@ namespace
 
 		void collisions()
 		{
-			for (Entity *e : PhysicsComponent::component->entities())
+			for (Entity *e : engineEntities()->component<PhysicsComponent>()->entities())
 			{
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				if (!p.collisionRadius.valid())
 					continue;
 				TransformComponent &t = e->value<TransformComponent>();
@@ -159,10 +156,10 @@ namespace
 
 		void applyAccelerations()
 		{
-			for (Entity *e : PhysicsComponent::component->entities())
+			for (Entity *e : engineEntities()->component<PhysicsComponent>()->entities())
 			{
 				CAGE_ASSERT(acceleration[e].valid());
-				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+				PhysicsComponent &p = e->value<PhysicsComponent>();
 				CAGE_ASSERT(p.velocity.valid());
 				TransformComponent &t = e->value<TransformComponent>();
 				CAGE_ASSERT(t.position.valid());
@@ -194,24 +191,22 @@ namespace
 		}
 	};
 
-	bool engineUpdate()
+	void engineUpdate()
 	{
 		PhysicsSimulation simulation;
 		simulation.run();
-		return false;
 	}
 
-	bool engineInitialize()
+	void engineInitialize()
 	{
-		PhysicsComponent::component = engineEntities()->defineComponent(PhysicsComponent());
-		SpringComponent::component = engineEntities()->defineComponent(SpringComponent());
-		return false;
+		engineEntities()->defineComponent(PhysicsComponent());
+		engineEntities()->defineComponent(SpringComponent());
 	}
 
 	class Callbacks
 	{
-		EventListener<bool()> engineInitListener;
-		EventListener<bool()> engineUpdateListener;
+		EventListener<void()> engineInitListener;
+		EventListener<void()> engineUpdateListener;
 	public:
 		Callbacks()
 		{

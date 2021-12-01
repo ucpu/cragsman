@@ -37,7 +37,7 @@ namespace
 	Entity *addSpring(uint32 a, uint32 b, Real restDistance, Real stiffness, Real damping)
 	{
 		Entity *spring = engineEntities()->createUnique();
-		::SpringComponent &s = (spring)->value<::SpringComponent>(::SpringComponent::component);;
+		SpringComponent &s = spring->value<SpringComponent>();
 		s.objects[0] = a;
 		s.objects[1] = b;
 		s.restDistance = restDistance;
@@ -66,11 +66,11 @@ namespace
 
 	void removeSprings(uint32 n)
 	{
-		auto sns = SpringComponent::component->entities();
+		auto sns = engineEntities()->component<SpringComponent>()->entities();
 		std::vector<Entity *> ses(sns.begin(), sns.end());
 		for (Entity *e : ses)
 		{
-			::SpringComponent &s = (e)->value<::SpringComponent>(::SpringComponent::component);;
+			SpringComponent &s = e->value<SpringComponent>();
 			if (s.objects[0] == n || s.objects[1] == n)
 				e->destroy();
 		}
@@ -106,17 +106,17 @@ namespace
 				uint32 clinchName = clinch->name();
 				for (uint32 i = 0; i < characterHandsCount; i++)
 				{
-					::SpringComponent &s = (engineEntities()->get(characterHandJoints[i]))->value<::SpringComponent>(::SpringComponent::component);;
+					SpringComponent &s = engineEntities()->get(characterHandJoints[i])->value<SpringComponent>();
 					if (s.objects[1] == clinchName)
 						return true; // do not allow multiple hands on single clinch
 				}
 				{ // attach current hand to the clinch
-					::SpringComponent &s = (engineEntities()->get(characterHandJoints[currentHand]))->value<::SpringComponent>(::SpringComponent::component);;
+					SpringComponent &s = engineEntities()->get(characterHandJoints[currentHand])->value<SpringComponent>();
 					s.objects[1] = clinchName;
 				}
 				currentHand = (currentHand + 1) % characterHandsCount;
 				{ // free another hand
-					::SpringComponent &s = (engineEntities()->get(characterHandJoints[currentHand]))->value<::SpringComponent>(::SpringComponent::component);;
+					SpringComponent &s = engineEntities()->get(characterHandJoints[currentHand])->value<SpringComponent>();
 					s.objects[1] = cursorName;
 				}
 			}
@@ -173,7 +173,7 @@ namespace
 			TransformComponent &t = body->value<TransformComponent>();
 			RenderComponent &r = body->value<RenderComponent>();
 			r.object = HashString("cragsman/character/body.object");
-			::PhysicsComponent &p = (body)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+			PhysicsComponent &p = body->value<PhysicsComponent>();
 			p.collisionRadius = 3;
 			p.mass = sphereVolume(p.collisionRadius);
 		}
@@ -189,7 +189,7 @@ namespace
 					TransformComponent &t = shoulder->value<TransformComponent>();
 					RenderComponent &r = shoulder->value<RenderComponent>();
 					r.object = HashString("cragsman/character/shoulder.object");
-					::PhysicsComponent &p = (shoulder)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+					PhysicsComponent &p = shoulder->value<PhysicsComponent>();
 					p.collisionRadius = 2.3067 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
@@ -197,7 +197,7 @@ namespace
 					TransformComponent &t = elbow->value<TransformComponent>();
 					RenderComponent &r = elbow->value<RenderComponent>();
 					r.object = HashString("cragsman/character/elbow.object");
-					::PhysicsComponent &p = (elbow)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+					PhysicsComponent &p = elbow->value<PhysicsComponent>();
 					p.collisionRadius = 2.56723 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
@@ -208,7 +208,7 @@ namespace
 					t.position = Vec3(pos, terrainOffset(pos));
 					RenderComponent &r = hand->value<RenderComponent>();
 					r.object = HashString("cragsman/character/hand.object");
-					::PhysicsComponent &p = (hand)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+					PhysicsComponent &p = hand->value<PhysicsComponent>();
 					p.collisionRadius = 1.1;
 					p.mass = sphereVolume(p.collisionRadius);
 					if (i == 0)
@@ -219,12 +219,12 @@ namespace
 				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
 				{
 					Entity *e = addSpring(characterShoulders[i], characterElbows[i], 7, 0.05, 0.1);
-					::SpringVisualComponent &sv = (e)->value<::SpringVisualComponent>(::SpringVisualComponent::component);;
+					SpringVisualComponent &sv = e->value<SpringVisualComponent>();
 					sv.color = colorDeviation(colorIndex(i), 0.1);
 				}
 				{
 					Entity *e = addSpring(characterElbows[i], characterHands[i], 10, 0.05, 0.1);
-					::SpringVisualComponent &sv = (e)->value<::SpringVisualComponent>(::SpringVisualComponent::component);;
+					SpringVisualComponent &sv = e->value<SpringVisualComponent>();
 					sv.color = colorDeviation(colorIndex(i), 0.1);
 				}
 			}
@@ -234,12 +234,12 @@ namespace
 		return true;
 	}
 
-	bool engineUpdate()
+	void engineUpdate()
 	{
 		if (!characterBody)
 		{
 			if (!initializeTheGame())
-				return false;
+				return;
 		}
 
 		{ // player position
@@ -291,21 +291,18 @@ namespace
 				ht.orientation = Quat(ht.position - et.position, Vec3(0, 0, 1), false);
 			}
 		}
-
-		return false;
 	}
 
-	bool engineInitialize()
+	void engineInitialize()
 	{
 		mousePressListener.attach(engineWindow()->events);
 		mousePressListener.bind<&mousePress>();
-		return false;
 	}
 
 	class Callbacks
 	{
-		EventListener<bool()> engineInitListener;
-		EventListener<bool()> engineUpdateListener;
+		EventListener<void()> engineInitListener;
+		EventListener<void()> engineUpdateListener;
 	public:
 		Callbacks()
 		{

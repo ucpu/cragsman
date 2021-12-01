@@ -11,9 +11,6 @@
 #include <unordered_map>
 #include <algorithm>
 
-EntityComponent *SpringVisualComponent::component;
-EntityComponent *TimeoutComponent::component;
-
 SpringVisualComponent::SpringVisualComponent() : color(1, 1, 1)
 {}
 
@@ -25,8 +22,8 @@ Entity *newParticle(const Vec3 &position, const Vec3 &velocity, const Vec3 &colo
 	Entity *e = engineEntities()->createAnonymous();
 	TransformComponent &t = e->value<TransformComponent>();
 	RenderComponent &r = e->value<RenderComponent>();
-	::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
-	::TimeoutComponent &to = (e)->value<::TimeoutComponent>(::TimeoutComponent::component);;
+	PhysicsComponent &p = e->value<PhysicsComponent>();
+	TimeoutComponent &to = e->value<TimeoutComponent>();
 	t.position = position;
 	t.orientation = randomDirectionQuat();
 	r.color = color;
@@ -49,21 +46,21 @@ namespace
 {
 	Vec3 entMov(Entity *e)
 	{
-		if (e->has(PhysicsComponent::component))
+		if (e->has<PhysicsComponent>())
 		{
-			::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+			PhysicsComponent &p = e->value<PhysicsComponent>();
 			return p.velocity / p.mass;
 		}
 		return {};
 	}
 
-	bool engineUpdate()
+	void engineUpdate()
 	{
 		{ // timeout entities
 			std::vector<Entity *> etd;
-			for (Entity *e : TimeoutComponent::component->entities())
+			for (Entity *e : engineEntities()->component<TimeoutComponent>()->entities())
 			{
-				::TimeoutComponent &t = (e)->value<::TimeoutComponent>(::TimeoutComponent::component);;
+				TimeoutComponent &t = e->value<TimeoutComponent>();
 				if (t.ttl-- == 0)
 					etd.push_back(e);
 			}
@@ -72,11 +69,11 @@ namespace
 		}
 
 		{ // spring visuals
-			for (Entity *e : SpringVisualComponent::component->entities())
+			for (Entity *e : engineEntities()->component<SpringVisualComponent>()->entities())
 			{
-				CAGE_ASSERT(e->has(SpringComponent::component));
-				::SpringComponent &s = (e)->value<::SpringComponent>(::SpringComponent::component);;
-				::SpringVisualComponent &v = (e)->value<::SpringVisualComponent>(::SpringVisualComponent::component);;
+				CAGE_ASSERT(e->has<SpringComponent>());
+				SpringComponent &s = e->value<SpringComponent>();
+				SpringVisualComponent &v = e->value<SpringVisualComponent>();
 				Entity *e0 = engineEntities()->get(s.objects[0]);
 				Entity *e1 = engineEntities()->get(s.objects[1]);
 				TransformComponent &t0 = e0->value<TransformComponent>();
@@ -109,21 +106,18 @@ namespace
 				}
 			}
 		}
-
-		return false;
 	}
 
-	bool engineInitialize()
+	void engineInitialize()
 	{
-		SpringVisualComponent::component = engineEntities()->defineComponent(SpringVisualComponent());
-		TimeoutComponent::component = engineEntities()->defineComponent(TimeoutComponent());
-		return false;
+		engineEntities()->defineComponent(SpringVisualComponent());
+		engineEntities()->defineComponent(TimeoutComponent());
 	}
 
 	class Callbacks
 	{
-		EventListener<bool()> engineInitListener;
-		EventListener<bool()> engineUpdateListener;
+		EventListener<void()> engineInitListener;
+		EventListener<void()> engineUpdateListener;
 	public:
 		Callbacks()
 		{
