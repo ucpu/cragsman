@@ -43,7 +43,7 @@ namespace
 			t.clinches.push_back(e);
 			TransformComponent &tr = e->value<TransformComponent>();
 			Vec2 pos = (Vec2(t.pos.x, t.pos.y) + Vec2(rg.randomChance(), rg.randomChance()) - 0.5) * tileLength;
-			tr.position = Vec3(pos, terrainOffset(pos) + CLINCH_TERRAIN_OFFSET);
+			tr.position = Vec3(pos, terrainOffset(pos) + ClinchTerrainOffset);
 			RenderComponent &r = e->value<RenderComponent>();
 			r.object = HashString("cragsman/clinch/clinch.object");
 		}

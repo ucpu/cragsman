@@ -49,12 +49,10 @@ struct TimeoutComponent
 	TimeoutComponent();
 };
 
-#define GAME_COMPONENT(T,C,E) ::T##Component &C = (E)->value<::T##Component>(::T##Component::component);
-
 extern uint32 cameraName;
 extern uint32 characterBody;
 extern Vec3 playerPosition;
 
-#define CLINCH_TERRAIN_OFFSET 1.2f
+constexpr float ClinchTerrainOffset = 1.2f;
 
 #endif

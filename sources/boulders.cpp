@@ -36,10 +36,10 @@ namespace
 				Real dummy;
 				terrainMaterial(Vec2(t.position), r.color, dummy, dummy, true);
 			}
-			GAME_COMPONENT(Physics, p, e);
+			::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 			p.collisionRadius = t.scale;
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
-			GAME_COMPONENT(Boulder, br, e);
+			::BoulderComponent &br = (e)->value<::BoulderComponent>(::BoulderComponent::component);;
 		}
 		std::vector<Entity*> entsToDestroy;
 		for (Entity *e : BoulderComponent::component->entities())
@@ -49,7 +49,7 @@ namespace
 				entsToDestroy.push_back(e);
 			else
 			{
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				Vec3 r = 1.5 * p.velocity / p.collisionRadius;
 				Quat rot = Quat(Degs(r[2] - r[1]), Degs(), Degs(-r[0]));
 				t.orientation = rot * t.orientation;

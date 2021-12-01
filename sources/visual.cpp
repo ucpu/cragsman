@@ -25,8 +25,8 @@ Entity *newParticle(const Vec3 &position, const Vec3 &velocity, const Vec3 &colo
 	Entity *e = engineEntities()->createAnonymous();
 	TransformComponent &t = e->value<TransformComponent>();
 	RenderComponent &r = e->value<RenderComponent>();
-	GAME_COMPONENT(Physics, p, e);
-	GAME_COMPONENT(Timeout, to, e);
+	::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
+	::TimeoutComponent &to = (e)->value<::TimeoutComponent>(::TimeoutComponent::component);;
 	t.position = position;
 	t.orientation = randomDirectionQuat();
 	r.color = color;
@@ -51,7 +51,7 @@ namespace
 	{
 		if (e->has(PhysicsComponent::component))
 		{
-			GAME_COMPONENT(Physics, p, e);
+			::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 			return p.velocity / p.mass;
 		}
 		return {};
@@ -63,7 +63,7 @@ namespace
 			std::vector<Entity *> etd;
 			for (Entity *e : TimeoutComponent::component->entities())
 			{
-				GAME_COMPONENT(Timeout, t, e);
+				::TimeoutComponent &t = (e)->value<::TimeoutComponent>(::TimeoutComponent::component);;
 				if (t.ttl-- == 0)
 					etd.push_back(e);
 			}
@@ -75,8 +75,8 @@ namespace
 			for (Entity *e : SpringVisualComponent::component->entities())
 			{
 				CAGE_ASSERT(e->has(SpringComponent::component));
-				GAME_COMPONENT(Spring, s, e);
-				GAME_COMPONENT(SpringVisual, v, e);
+				::SpringComponent &s = (e)->value<::SpringComponent>(::SpringComponent::component);;
+				::SpringVisualComponent &v = (e)->value<::SpringVisualComponent>(::SpringVisualComponent::component);;
 				Entity *e0 = engineEntities()->get(s.objects[0]);
 				Entity *e1 = engineEntities()->get(s.objects[1]);
 				TransformComponent &t0 = e0->value<TransformComponent>();

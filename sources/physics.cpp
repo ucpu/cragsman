@@ -50,7 +50,7 @@ namespace
 		{
 			if (e->has(PhysicsComponent::component))
 			{
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				CAGE_ASSERT(p.mass > 1e-7);
 				return p.mass;
 			}
@@ -61,7 +61,7 @@ namespace
 		{
 			if (e->has(PhysicsComponent::component))
 			{
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				return p.velocity;
 			}
 			return {};
@@ -78,7 +78,7 @@ namespace
 			Real timeStep2 = deltaTime * deltaTime;
 			for (Entity *e : SpringComponent::component->entities())
 			{
-				GAME_COMPONENT(Spring, s, e);
+				::SpringComponent &s = (e)->value<::SpringComponent>(::SpringComponent::component);;
 				CAGE_ASSERT(s.restDistance >= 0);
 				CAGE_ASSERT(s.stiffness > 0 && s.stiffness < 1);
 				CAGE_ASSERT(s.damping > 0 && s.damping < 1);
@@ -108,7 +108,7 @@ namespace
 			Vec3 g = Vec3(0, -9.8, 0);
 			for (Entity *e : PhysicsComponent::component->entities())
 			{
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				addForce(e, p.mass * g);
 			}
 		}
@@ -131,7 +131,7 @@ namespace
 		{
 			for (Entity *e : PhysicsComponent::component->entities())
 			{
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				if (!p.collisionRadius.valid())
 					continue;
 				TransformComponent &t = e->value<TransformComponent>();
@@ -162,7 +162,7 @@ namespace
 			for (Entity *e : PhysicsComponent::component->entities())
 			{
 				CAGE_ASSERT(acceleration[e].valid());
-				GAME_COMPONENT(Physics, p, e);
+				::PhysicsComponent &p = (e)->value<::PhysicsComponent>(::PhysicsComponent::component);;
 				CAGE_ASSERT(p.velocity.valid());
 				TransformComponent &t = e->value<TransformComponent>();
 				CAGE_ASSERT(t.position.valid());
