@@ -137,42 +137,40 @@ namespace
 		}
 
 		{ // camera
-			Entity *cam;
-			cameraName = (cam = engineEntities()->createUnique())->name();
-			TransformComponent &t = cam->value<TransformComponent>();
+			Entity *cam = engineEntities()->createUnique();
+			cameraName = cam->name();
+			cam->value<TransformComponent>();
 			CameraComponent &c = cam->value<CameraComponent>();
 			c.ambientColor = Vec3(1);
 			c.ambientIntensity = 0.03;
 			c.near = 10;
 			c.far = 500;
-			c.effects = CameraEffectsFlags::Default;
 		}
 
 		{ // light
-			Entity *lig;
-			lightName = (lig = engineEntities()->createUnique())->name();
-			TransformComponent &t = lig->value<TransformComponent>();
+			Entity *lig = engineEntities()->createUnique();
+			lightName = lig->name();
+			lig->value<TransformComponent>();
 			LightComponent &l = lig->value<LightComponent>();
-			ShadowmapComponent &s = lig->value<ShadowmapComponent>();
 			l.lightType = LightTypeEnum::Directional;
 			l.color = Vec3(1);
 			l.intensity = 3;
+			ShadowmapComponent &s = lig->value<ShadowmapComponent>();
 			s.resolution = 4096;
 			s.worldSize = Vec3(150, 150, 200);
 		}
 
 		{ // cursor
-			Entity *cur;
-			cursorName = (cur = engineEntities()->createUnique())->name();
-			TransformComponent &t = cur->value<TransformComponent>();
+			Entity *cur = engineEntities()->createUnique();
+			cursorName = cur->name();
+			cur->value<TransformComponent>();
 		}
 
 		{ // body
-			Entity *body;
-			characterBody = (body = engineEntities()->createUnique())->name();
-			TransformComponent &t = body->value<TransformComponent>();
-			RenderComponent &r = body->value<RenderComponent>();
-			r.object = HashString("cragsman/character/body.object");
+			Entity *body = engineEntities()->createUnique();
+			characterBody = body->name();
+			body->value<TransformComponent>();
+			body->value<RenderComponent>().object = HashString("cragsman/character/body.object");
 			PhysicsComponent &p = body->value<PhysicsComponent>();
 			p.collisionRadius = 3;
 			p.mass = sphereVolume(p.collisionRadius);
@@ -186,28 +184,24 @@ namespace
 				characterElbows[i] = (elbow = engineEntities()->createUnique())->name();
 				characterHands[i] = (hand = engineEntities()->createUnique())->name();
 				{ // shoulder
-					TransformComponent &t = shoulder->value<TransformComponent>();
-					RenderComponent &r = shoulder->value<RenderComponent>();
-					r.object = HashString("cragsman/character/shoulder.object");
+					shoulder->value<TransformComponent>();
+					shoulder->value<RenderComponent>().object = HashString("cragsman/character/shoulder.object");
 					PhysicsComponent &p = shoulder->value<PhysicsComponent>();
 					p.collisionRadius = 2.3067 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // elbow
-					TransformComponent &t = elbow->value<TransformComponent>();
-					RenderComponent &r = elbow->value<RenderComponent>();
-					r.object = HashString("cragsman/character/elbow.object");
+					elbow->value<TransformComponent>();
+					elbow->value<RenderComponent>().object = HashString("cragsman/character/elbow.object");
 					PhysicsComponent &p = elbow->value<PhysicsComponent>();
 					p.collisionRadius = 2.56723 / 2;
 					p.mass = sphereVolume(p.collisionRadius);
 				}
 				{ // hand
-					TransformComponent &t = hand->value<TransformComponent>();
 					Rads angle = Real(i) / characterHandsCount * Rads::Full();
 					Vec2 pos = Vec2(cos(angle), sin(angle)) * 20;
-					t.position = Vec3(pos, terrainOffset(pos));
-					RenderComponent &r = hand->value<RenderComponent>();
-					r.object = HashString("cragsman/character/hand.object");
+					hand->value<TransformComponent>().position = Vec3(pos, terrainOffset(pos));
+					hand->value<RenderComponent>().object = HashString("cragsman/character/hand.object");
 					PhysicsComponent &p = hand->value<PhysicsComponent>();
 					p.collisionRadius = 1.1;
 					p.mass = sphereVolume(p.collisionRadius);
@@ -219,13 +213,11 @@ namespace
 				addSpring(characterBody, characterShoulders[i], 4, 0.05, 0.1);
 				{
 					Entity *e = addSpring(characterShoulders[i], characterElbows[i], 7, 0.05, 0.1);
-					SpringVisualComponent &sv = e->value<SpringVisualComponent>();
-					sv.color = colorDeviation(colorIndex(i), 0.1);
+					e->value<SpringVisualComponent>().color = colorDeviation(colorIndex(i), 0.1);
 				}
 				{
 					Entity *e = addSpring(characterElbows[i], characterHands[i], 10, 0.05, 0.1);
-					SpringVisualComponent &sv = e->value<SpringVisualComponent>();
-					sv.color = colorDeviation(colorIndex(i), 0.1);
+					e->value<SpringVisualComponent>().color = colorDeviation(colorIndex(i), 0.1);
 				}
 			}
 			currentHand = 0;

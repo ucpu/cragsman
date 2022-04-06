@@ -35,7 +35,7 @@ namespace
 			PhysicsComponent &p = e->value<PhysicsComponent>();
 			p.collisionRadius = t.scale;
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
-			BoulderComponent &br = e->value<BoulderComponent>();
+			e->value<BoulderComponent>();
 		}
 		std::vector<Entity*> entsToDestroy;
 		for (Entity *e : engineEntities()->component<BoulderComponent>()->entities())

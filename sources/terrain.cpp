@@ -8,7 +8,7 @@
 #include <cage-core/threadPool.h>
 #include <cage-core/debug.h>
 #include <cage-core/mesh.h>
-#include <cage-core/meshMaterial.h>
+#include <cage-core/meshImport.h>
 #include <cage-core/serialization.h>
 
 #include <cage-engine/scene.h>
@@ -189,7 +189,7 @@ namespace
 	Holder<Model> dispatchMesh(Holder<Mesh> &poly)
 	{
 		Holder<Model> m = newModel();
-		MeshMaterial mat;
+		MeshImportMaterial mat;
 		m->importMesh(+poly, bufferView(mat));
 		poly.clear();
 		return m;
@@ -206,14 +206,8 @@ namespace
 				t.gpuAlbedo = dispatchTexture(t.cpuAlbedo);
 				t.gpuSpecial = dispatchTexture(t.cpuSpecial);
 				t.gpuMesh = dispatchMesh(t.cpuMesh);
-
-				{ // set texture names for the mesh
-					uint32 textures[MaxTexturesCountPerMaterial];
-					detail::memset(textures, 0, sizeof(textures));
-					textures[0] = t.albedoName;
-					textures[1] = t.specialName;
-					t.gpuMesh->setTextureNames(textures);
-				}
+				t.gpuMesh->textureNames[0] = t.albedoName;
+				t.gpuMesh->textureNames[1] = t.specialName;
 
 				// transfer asset ownership
 				ass->fabricate<AssetSchemeIndexTexture, Texture>(t.albedoName, std::move(t.gpuAlbedo), Stringizer() + "albedo " + t.pos);
