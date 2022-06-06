@@ -10,7 +10,7 @@
 
 namespace
 {
-	const uint32 GlobalSeed = (uint32)detail::globalRandomGenerator().next();
+	const uint32 GlobalSeed = (uint32)detail::randomGenerator().next();
 
 	uint32 newSeed()
 	{
