@@ -4,6 +4,12 @@
 #include <cage-core/core.h>
 #include <cage-core/math.h>
 
+namespace cage
+{
+	class Entity;
+	class Collider;
+}
+
 using namespace cage;
 
 void findInitialClinches(uint32 &count, Entity **result);
