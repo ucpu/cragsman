@@ -3,11 +3,11 @@
 #include <cage-core/concurrent.h>
 #include <cage-core/assetManager.h>
 #include <cage-core/memoryBuffer.h>
-#include <cage-core/image.h>
+#include <cage-core/imageAlgorithms.h>
 #include <cage-core/collider.h>
 #include <cage-core/threadPool.h>
 #include <cage-core/debug.h>
-#include <cage-core/mesh.h>
+#include <cage-core/meshAlgorithms.h>
 #include <cage-core/meshImport.h>
 #include <cage-core/serialization.h>
 
