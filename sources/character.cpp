@@ -76,10 +76,9 @@ namespace
 		}
 	}
 
-	Vec3 screenToWorld(const Vec2i &point)
+	Vec3 screenToWorld(Vec2 p)
 	{
 		Vec2i res = engineWindow()->resolution();
-		Vec2 p = Vec2(point[0], point[1]);
 		p /= Vec2(res[0], res[1]);
 		p = p * 2 - 1;
 		Real px = p[0], py = -p[1];
