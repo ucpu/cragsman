@@ -4,91 +4,33 @@
 #include <cage-core/hashString.h>
 
 #include <cage-engine/scene.h>
-#include <cage-engine/guiComponents.h>
+#include <cage-engine/guiBuilder.h>
 #include <cage-simple/engine.h>
 
 namespace
 {
 	sint32 bestScore;
-	sint32 texts[2];
 
 	bool engineUpdate()
 	{
 		sint32 currentScore = numeric_cast<sint32>(playerPosition[1] * 0.1);
 		bestScore = max(currentScore, bestScore);
-
 		EntityManager *ents = engineGuiEntities();
-
-		{ // best
-			GuiTextComponent &t = ents->get(texts[0])->value<GuiTextComponent>();
-			t.value = Stringizer() + bestScore;
-		}
-
-		{ // current
-			GuiTextComponent &t = ents->get(texts[1])->value<GuiTextComponent>();
-			t.value = Stringizer() + currentScore;
-		}
-
+		ents->get(1)->value<GuiTextComponent>().value = Stringizer() + bestScore;
+		ents->get(2)->value<GuiTextComponent>().value = Stringizer() + currentScore;
 		return false;
 	}
 
 	bool engineInitialize()
 	{
-		EntityManager *ents = engineGuiEntities();
-
-		Entity *panel = nullptr;
-		{ // panel
-			Entity *wrapper = ents->createUnique();
-			GuiScrollbarsComponent &sc = wrapper->value<GuiScrollbarsComponent>();
-			panel = ents->createUnique();
-			GuiParentComponent &parent = panel->value<GuiParentComponent>();
-			parent.parent = wrapper->name();
-			GuiPanelComponent &g = panel->value<GuiPanelComponent>();
-			GuiLayoutTableComponent &lt = panel->value<GuiLayoutTableComponent>();
-		}
-
-		{ // best score
-			{ // label
-				Entity *e = ents->createUnique();
-				GuiParentComponent &p = e->value<GuiParentComponent>();
-				p.parent = panel->name();
-				p.order = 1;
-				GuiLabelComponent &l = e->value<GuiLabelComponent>();
-				GuiTextComponent &t = e->value<GuiTextComponent>();
-				t.value = "Best Score: ";
-			}
-			{ // value
-				Entity *e = ents->createUnique();
-				GuiParentComponent &p = e->value<GuiParentComponent>();
-				p.parent = panel->name();
-				p.order = 2;
-				GuiLabelComponent &l = e->value<GuiLabelComponent>();
-				GuiTextComponent &t = e->value<GuiTextComponent>();
-				texts[0] = e->name();
-			}
-		}
-
-		{ // current score
-			{ // label
-				Entity *e = ents->createUnique();
-				GuiParentComponent &p = e->value<GuiParentComponent>();
-				p.parent = panel->name();
-				p.order = 3;
-				GuiLabelComponent &l = e->value<GuiLabelComponent>();
-				GuiTextComponent &t = e->value<GuiTextComponent>();
-				t.value = "Current Score: ";
-			}
-			{ // value
-				Entity *e = ents->createUnique();
-				GuiParentComponent &p = e->value<GuiParentComponent>();
-				p.parent = panel->name();
-				p.order = 4;
-				GuiLabelComponent &l = e->value<GuiLabelComponent>();
-				GuiTextComponent &t = e->value<GuiTextComponent>();
-				texts[1] = e->name();
-			}
-		}
-
+		Holder<GuiBuilder> g = newGuiBuilder(engineGuiEntities());
+		auto _1 = g->alignment(Vec2(0));
+		auto _2 = g->panel();
+		auto _3 = g->verticalTable(2);
+		g->label().text("Best Score: ");
+		g->setNextName(1).label().text("");
+		g->label().text("Current Score: ");
+		g->setNextName(2).label().text("");
 		return false;
 	}
 
