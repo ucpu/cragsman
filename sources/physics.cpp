@@ -22,20 +22,17 @@ Real sphereVolume(Real radius)
 
 namespace
 {
-	Holder<CollisionStructure> collisionSearchData;
-	Holder<CollisionQuery> collisionSearchQuery;
+	Holder<CollisionStructure> collisionSearchData = newCollisionStructure({});
+	Holder<CollisionQuery> collisionSearchQuery = newCollisionQuery(collisionSearchData.share());
 
 	class PhysicsSimulation
 	{
 	public:
 		static constexpr uint32 repeatSteps = 2; // increasing steps increases simulation precision
-		const Real deltaTime;
+		const Real deltaTime = controlThread().updatePeriod() * 1e-6f / repeatSteps;
 
 		std::vector<Entity*> entsToDestroy;
 		std::unordered_map<Entity*, Vec3> acceleration;
-
-		PhysicsSimulation() : deltaTime(controlThread().updatePeriod() * 1e-6f / repeatSteps)
-		{}
 
 		static Vec3 entPos(Entity *e)
 		{
@@ -191,35 +188,15 @@ namespace
 		}
 	};
 
-	void engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		PhysicsSimulation simulation;
 		simulation.run();
-	}
+	});
 
-	void engineInitialize()
-	{
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		engineEntities()->defineComponent(PhysicsComponent());
 		engineEntities()->defineComponent(SpringComponent());
-	}
-
-	class Callbacks
-	{
-		EventListener<void()> engineInitListener;
-		EventListener<void()> engineUpdateListener;
-	public:
-		Callbacks()
-		{
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-			{
-				collisionSearchData = newCollisionStructure({});
-				collisionSearchQuery = newCollisionQuery(collisionSearchData.share());
-			}
-		}
-	} callbacksInstance;
+	});
 }
 
 void addTerrainCollider(uint32 name, Holder<Collider> c)

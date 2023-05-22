@@ -13,8 +13,7 @@ namespace
 	struct BoulderComponent
 	{};
 
-	void engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		if (!characterBody)
 			return;
 		TransformComponent &pt = engineEntities()->get(characterBody)->value<TransformComponent>();
@@ -37,7 +36,7 @@ namespace
 			p.mass = sphereVolume(p.collisionRadius) * 0.5;
 			e->value<BoulderComponent>();
 		}
-		std::vector<Entity*> entsToDestroy;
+		std::vector<Entity *> entsToDestroy;
 		for (Entity *e : engineEntities()->component<BoulderComponent>()->entities())
 		{ // rotate boulders
 			TransformComponent &t = e->value<TransformComponent>();
@@ -53,24 +52,9 @@ namespace
 		}
 		for (auto e : entsToDestroy)
 			e->destroy();
-	}
+	});
 
-	void engineInitialize()
-	{
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		engineEntities()->defineComponent(BoulderComponent());
-	}
-
-	class Callbacks
-	{
-		EventListener<void()> engineInitListener;
-		EventListener<void()> engineUpdateListener;
-	public:
-		Callbacks()
-		{
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-		}
-	} callbacksInstance;
+	});
 }

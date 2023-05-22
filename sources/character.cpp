@@ -10,6 +10,7 @@
 #include <cage-engine/window.h>
 #include <cage-engine/inputs.h>
 #include <cage-simple/engine.h>
+#include <cage-simple/cameraRay.h>
 
 #include <vector>
 #include <algorithm>
@@ -20,8 +21,6 @@ Vec3 playerPosition;
 
 namespace
 {
-	InputListener<InputClassEnum::MousePress, InputMouse, bool> mousePressListener;
-
 	uint32 lightName;
 	uint32 cursorName;
 
@@ -78,20 +77,7 @@ namespace
 
 	Vec3 screenToWorld(Vec2 p)
 	{
-		Vec2i res = engineWindow()->resolution();
-		p /= Vec2(res[0], res[1]);
-		p = p * 2 - 1;
-		Real px = p[0], py = -p[1];
-		TransformComponent &ts = engineEntities()->get(cameraName)->value<TransformComponent>();
-		CameraComponent &cs = engineEntities()->get(cameraName)->value<CameraComponent>();
-		Mat4 view = Mat4(inverse(ts));
-		Mat4 proj = perspectiveProjection(cs.camera.perspectiveFov, Real(res[0]) / Real(res[1]), cs.near, cs.far);
-		Mat4 inv = inverse(proj * view);
-		Vec4 pn = inv * Vec4(px, py, -1, 1);
-		Vec4 pf = inv * Vec4(px, py, 1, 1);
-		Vec3 near = Vec3(pn) / pn[3];
-		Vec3 far = Vec3(pf) / pf[3];
-		return terrainIntersection(makeSegment(near, far));
+		return terrainIntersection(cameraRay(engineEntities()->get(cameraName), p));
 	}
 
 	bool mousePress(InputMouse in)
@@ -225,8 +211,7 @@ namespace
 		return true;
 	}
 
-	void engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		if (!characterBody)
 		{
 			if (!initializeTheGame())
@@ -282,25 +267,11 @@ namespace
 				ht.orientation = Quat(ht.position - et.position, Vec3(0, 0, 1), false);
 			}
 		}
-	}
+	});
 
-	void engineInitialize()
-	{
+	EventListener<bool(const GenericInput &)> mousePressListener;
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		mousePressListener.attach(engineWindow()->events);
-		mousePressListener.bind<&mousePress>();
-	}
-
-	class Callbacks
-	{
-		EventListener<void()> engineInitListener;
-		EventListener<void()> engineUpdateListener;
-	public:
-		Callbacks()
-		{
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-		}
-	} callbacksInstance;
+		mousePressListener.bind(inputListener<InputClassEnum::MousePress, InputMouse>(&mousePress));
+	});
 }

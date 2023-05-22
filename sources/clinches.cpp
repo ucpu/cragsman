@@ -49,8 +49,7 @@ namespace
 		}
 	}
 
-	bool engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		bool changes = false;
 		{ // remove unneeded tiles
 			tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [&](const Tile &t) {
@@ -87,29 +86,12 @@ namespace
 				spatialSearchData->rebuild();
 			}
 		}
-		return false;
-	}
+	});
 
-	bool engineInitialize()
-	{
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		spatialSearchData = newSpatialStructure({});
 		spatialSearchQuery = newSpatialQuery(spatialSearchData.share());
-		return false;
-	}
-
-	class Callbacks
-	{
-		EventListener<bool()> engineUpdateListener;
-		EventListener<bool()> engineInitListener;
-	public:
-		Callbacks()
-		{
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-		}
-	} callbacksInstance;
+	});
 }
 
 void findInitialClinches(uint32 &count, Entity **result)

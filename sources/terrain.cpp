@@ -101,9 +101,17 @@ namespace
 	std::array<Tile, 256> tiles;
 	std::atomic<bool> stopping;
 
+	void generatorEntry();
+
 	/////////////////////////////////////////////////////////////////////////////
 	// CONTROL
 	/////////////////////////////////////////////////////////////////////////////
+
+	const auto engineInitListener = controlThread().initialize.listen([]() {
+		uint32 cpuCount = max(processorsCount(), 2u) - 1;
+		for (uint32 i = 0; i < cpuCount; i++)
+			generatorThreads.push_back(newThread(Delegate<void()>().bind<&generatorEntry>(), Stringizer() + "generator " + i));
+	});
 
 	void engineUpdate()
 	{
@@ -124,7 +132,7 @@ namespace
 				ass->remove(t.objectName);
 				removeTerrainCollider(t.objectName);
 				t.entity->destroy();
-				(TileBase&)t = TileBase();
+				(TileBase &)t = TileBase();
 				t.status = TileStateEnum::Init;
 			}
 
@@ -165,11 +173,14 @@ namespace
 		}
 	}
 
-	void engineFinalize()
-	{
+	const auto engineUpdateListener = controlThread().update.listen(&engineUpdate);
+
+	const auto engineUnloadListener = controlThread().unload.listen(&engineUpdate);
+
+	const auto engineFinalizeListener = controlThread().finalize.listen([]() {
 		stopping = true;
 		generatorThreads.clear();
-	}
+	});
 
 	/////////////////////////////////////////////////////////////////////////////
 	// DISPATCH
@@ -194,9 +205,8 @@ namespace
 		poly.clear();
 		return m;
 	}
-	
-	void engineDispatch()
-	{
+
+	const auto engineDispatchListener = graphicsDispatchThread().dispatch.listen([]() {
 		AssetManager *ass = engineAssets();
 		CAGE_CHECK_GL_ERROR_DEBUG();
 		for (Tile &t : tiles)
@@ -220,7 +230,7 @@ namespace
 			}
 		}
 		CAGE_CHECK_GL_ERROR_DEBUG();
-	}
+	});
 
 	/////////////////////////////////////////////////////////////////////////////
 	// GENERATOR
@@ -394,38 +404,4 @@ namespace
 			t->status = TileStateEnum::Upload;
 		}
 	}
-
-	/////////////////////////////////////////////////////////////////////////////
-	// INITIALIZE
-	/////////////////////////////////////////////////////////////////////////////
-
-	void engineInitialize()
-	{
-		uint32 cpuCount = max(processorsCount(), 2u) - 1;
-		for (uint32 i = 0; i < cpuCount; i++)
-			generatorThreads.push_back(newThread(Delegate<void()>().bind<&generatorEntry>(), Stringizer() + "generator " + i));
-	}
-
-	class Callbacks
-	{
-		EventListener<void()> engineUpdateListener;
-		EventListener<void()> engineInitializeListener;
-		EventListener<void()> engineFinalizeListener;
-		EventListener<void()> engineUnloadListener;
-		EventListener<void()> engineDispatchListener;
-	public:
-		Callbacks()
-		{
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-			engineInitializeListener.attach(controlThread().initialize);
-			engineInitializeListener.bind<&engineInitialize>();
-			engineFinalizeListener.attach(controlThread().finalize);
-			engineFinalizeListener.bind<&engineFinalize>();
-			engineUnloadListener.attach(controlThread().unload);
-			engineUnloadListener.bind<&engineUpdate>();
-			engineDispatchListener.attach(graphicsDispatchThread().dispatch);
-			engineDispatchListener.bind<&engineDispatch>();
-		}
-	} callbacksInstance;
 }

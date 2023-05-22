@@ -35,9 +35,7 @@ int main(int argc, const char *args[])
 		controlThread().updatePeriod(1000000 / 30);
 		engineAssets()->add(HashString("cragsman/cragsman.pack"));
 
-		InputListener<InputClassEnum::WindowClose, InputWindow> closeListener;
-		closeListener.attach(engineWindow()->events);
-		closeListener.bind<&windowClose>();
+		const auto closeListener = engineWindow()->events.listen(inputListener<InputClassEnum::WindowClose, InputWindow>(&windowClose));
 		engineWindow()->title("Cragsman");
 
 		{
@@ -46,7 +44,7 @@ int main(int argc, const char *args[])
 			engineStatistics->statisticsScope = StatisticsGuiScopeEnum::None;
 			engineStatistics->screenPosition = Vec2(0.5, 0.5);
 
-			engineStart();
+			engineRun();
 		}
 
 		engineAssets()->remove(HashString("cragsman/cragsman.pack"));

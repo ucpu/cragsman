@@ -11,18 +11,15 @@ namespace
 {
 	sint32 bestScore;
 
-	bool engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		sint32 currentScore = numeric_cast<sint32>(playerPosition[1] * 0.1);
 		bestScore = max(currentScore, bestScore);
 		EntityManager *ents = engineGuiEntities();
 		ents->get(1)->value<GuiTextComponent>().value = Stringizer() + bestScore;
 		ents->get(2)->value<GuiTextComponent>().value = Stringizer() + currentScore;
-		return false;
-	}
+	});
 
-	bool engineInitialize()
-	{
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		Holder<GuiBuilder> g = newGuiBuilder(engineGuiEntities());
 		auto _1 = g->alignment(Vec2(0));
 		auto _2 = g->panel();
@@ -31,20 +28,5 @@ namespace
 		g->setNextName(1).label().text("");
 		g->label().text("Current Score: ");
 		g->setNextName(2).label().text("");
-		return false;
-	}
-
-	class Callbacks
-	{
-		EventListener<bool()> engineInitListener;
-		EventListener<bool()> engineUpdateListener;
-	public:
-		Callbacks()
-		{
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-		}
-	} callbacksInstance;
+	});
 }

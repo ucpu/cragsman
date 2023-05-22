@@ -54,8 +54,7 @@ namespace
 		return {};
 	}
 
-	void engineUpdate()
-	{
+	const auto engineUpdateListener = controlThread().update.listen([]() {
 		{ // timeout entities
 			std::vector<Entity *> etd;
 			for (Entity *e : engineEntities()->component<TimeoutComponent>()->entities())
@@ -106,25 +105,10 @@ namespace
 				}
 			}
 		}
-	}
+	});
 
-	void engineInitialize()
-	{
+	const auto engineInitListener = controlThread().initialize.listen([]() {
 		engineEntities()->defineComponent(SpringVisualComponent());
 		engineEntities()->defineComponent(TimeoutComponent());
-	}
-
-	class Callbacks
-	{
-		EventListener<void()> engineInitListener;
-		EventListener<void()> engineUpdateListener;
-	public:
-		Callbacks()
-		{
-			engineInitListener.attach(controlThread().initialize);
-			engineInitListener.bind<&engineInitialize>();
-			engineUpdateListener.attach(controlThread().update);
-			engineUpdateListener.bind<&engineUpdate>();
-		}
-	} callbacksInstance;
+	});
 }
